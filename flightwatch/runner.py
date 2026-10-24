@@ -29,10 +29,11 @@ class Blocked(Exception):
 
 
 class App:
-    def __init__(self, state, frontier, bot, now_fn=None, sleep=time.sleep, log=print):
+    def __init__(self, state, frontier, bot, now_fn=None, sleep=time.sleep, log=print, inbox=None):
         self.state = state
         self.frontier = frontier
         self.bot = bot
+        self.inbox = inbox
         self._now = now_fn or (lambda: datetime.now(timezone.utc))
         self.sleep = sleep
         self.log = log
@@ -59,19 +60,54 @@ class App:
             self.log(f"telegram send failed: {e}")
 
     def process_commands(self):
+        """Answer pending commands from the relay's GitHub inbox and from Telegram getUpdates."""
+        if self.inbox is not None:
+            try:
+                pending = self.inbox.pending()
+            except Exception as e:
+                self.log(f"inbox read failed: {e}")
+                return
+            for comment_id, text in pending:
+                self._answer(text)
+                try:
+                    self.inbox.done(comment_id)
+                except Exception as e:
+                    self.log(f"inbox delete failed: {e}")
         if self.bot is None:
             return
+        # Without the relay, messages wait in Telegram for getUpdates. With it, Telegram
+        # refuses getUpdates (409, webhook active) and the inbox above has them instead.
         rt = self.state.runtime
         try:
             cmds, rt["telegram_offset"] = self.bot.commands_since(rt["telegram_offset"])
         except Exception as e:
-            self.log(f"telegram getUpdates failed: {e}")
+            if "409" not in str(e) and "webhook" not in str(e).lower():
+                self.log(f"telegram getUpdates failed: {e}")
             return
         for text, _ in cmds:
-            self.log(f"command: {text}")
-            reply = commands.handle(self.state, text, self.local_now())
-            if reply:
-                self.notify(reply)
+            self._answer(text)
+
+    def _answer(self, text):
+        self.log(f"command: {text}")
+        if text.strip().lower().split("@")[0] == "/now":
+            return self.now_report()
+        reply = commands.handle(self.state, text, self.local_now())
+        if reply:
+            self.notify(reply)
+
+    def now_report(self):
+        """/now: check Frontier right away and report today's and tomorrow's flights."""
+        blocks = []
+        try:
+            for route in self.state.routes():
+                today = self.route_today(route)
+                for dep, title in ((today, "(today)"), (today + timedelta(days=1), "(tomorrow)")):
+                    if not rules.is_blackout(dep):
+                        self.poll(route, dep, "now")
+                    blocks.append(messages.route_day_block(self.state, route, dep, title))
+        except Blocked:
+            blocks.append("⚠️ Frontier refused the check, so this may be incomplete.")
+        self.notify("🔎 <b>Right now</b>\n\n" + "\n\n".join(blocks))
 
     # ------------------------------------------------------------ checking
 
@@ -148,6 +184,14 @@ class App:
         if (t.hour, t.minute) >= NIGHT_START or (t.hour == 0 and t.minute < NIGHT_END_AFTER_MIDNIGHT - 5):
             return "night"
         return "tick"
+
+    def commands_run(self):
+        """Started by a relayed Telegram message. Answers it; if this run took the place of
+        the night watch in GitHub's queue, does the night watch too."""
+        if self.pick_mode() == "night":
+            return self.night()
+        self.process_commands()
+        self.maybe_digest()
 
     def tick(self):
         self.process_commands()

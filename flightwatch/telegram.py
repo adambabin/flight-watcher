@@ -9,6 +9,7 @@ import urllib.request
 API = "https://api.telegram.org"
 
 COMMANDS = [
+    ("now", "Check Frontier right now"),
     ("status", "Settings, armed alerts, last check"),
     ("alert", "Ping me when GoWild seats open, e.g. /alert wed"),
     ("alerts", "List armed alerts"),

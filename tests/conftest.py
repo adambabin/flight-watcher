@@ -87,3 +87,16 @@ def make_app(state, clock, respond, inbox=()):
 
 def local(y, mo, d, h, mi=0):
     return datetime(y, mo, d, h, mi, tzinfo=CT)
+
+
+class FakeInbox:
+    def __init__(self, texts=()):
+        self.items = [(i, t) for i, t in enumerate(texts, 1)]
+        self.deleted = []
+
+    def pending(self):
+        return list(self.items)
+
+    def done(self, comment_id):
+        self.deleted.append(comment_id)
+        self.items = [x for x in self.items if x[0] != comment_id]

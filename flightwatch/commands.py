@@ -10,6 +10,7 @@ from .timeutil import day_label, hhmm, iso, parse_clock
 HELP = """<b>GoWild watcher</b>
 I check Frontier for GoWild seats on your routes, watch the midnight release, and send a morning report.
 
+/now — check Frontier right now
 /alert — ping me when the next release opens (tonight's midnight)
 /alert wed · /alert 10/29 · /alert ORD-IAH fri — a specific travel date or route
 /alerts · /cancel all · /cancel wed
@@ -21,7 +22,7 @@ I check Frontier for GoWild seats on your routes, watch the midnight release, an
 /history · /history IAH-ORD
 /status
 
-Commands are picked up at the next check (within ~3 hours, or within minutes around midnight)."""
+I react 👀 when your message arrives and reply within about a minute."""
 
 _ROUTE_RE = re.compile(r"^([A-Za-z]{3})(?:-|>|/|→)([A-Za-z]{3})$")
 _DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]

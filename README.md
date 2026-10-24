@@ -47,13 +47,41 @@ Frontier has no public API. Its normal flight-search page, the one anyone sees l
 | `/add ORD-DEN`, `/remove ORD-DEN` | Track another route (nonstops only) |
 | `/digest 6:00`, `/digest off` | Morning report time |
 | `/history`, `/history IAH-ORD` | Recent release and sell-out times |
+| `/now` | Check Frontier right now: today's and tomorrow's flights |
 | `/status` | Current settings and armed alerts |
 
 **Dates mean travel dates.** `/alert wed` means Wednesday flights. Their seats open around midnight going into Tuesday, and the bot's reply always says when to expect them.
 
-**Commands aren't instant.** There's no always-on server, so the bot reads your messages at the next run: within about 3 hours during the day, and every couple of minutes during the midnight watch. Arming `/alert` any time before ~11:45 PM is enough for that night.
+**How fast the bot answers:** once the relay below is set up, your message gets a 👀 reaction right away and a reply in about 30–60 seconds. That's how long GitHub takes to start a run. Without the relay, messages wait for the next scheduled check, which can be up to about 3 hours. `/now` checks Frontier on the spot.
 
 An alert stays armed until its travel date passes. It pings when seats open, and again if they sell out and later reopen.
+
+## Fast replies: the Telegram relay (optional, about 10 minutes)
+
+Telegram can't start a GitHub run by itself. A tiny free Cloudflare Worker (`relay/worker.js`) bridges the two:
+
+1. Telegram sends your message to the worker.
+2. The worker posts the message as a comment on the [Telegram inbox](../../issues/2) issue and reacts 👀.
+3. That comment starts the workflow, which answers your message and deletes the comment.
+
+**Setup:**
+
+1. **GitHub token.** Go to GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token.
+   - **Repository access:** Only select repositories → `flight-watcher`.
+   - **Permissions:** Repository permissions → **Issues: Read and write**.
+   - Copy the token.
+2. **Cloudflare worker.** Sign up free at [dash.cloudflare.com](https://dash.cloudflare.com).
+   - Go to **Workers & Pages → Create → Start with Hello World → Deploy**.
+   - Choose **Edit code**, replace everything with the contents of `relay/worker.js`, and **Deploy**.
+3. **Worker settings.** In the worker, go to **Settings → Variables and secrets** and add three, each as type *Secret*:
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_CHAT_ID`
+   - `GITHUB_TOKEN` (the token from step 1)
+4. **Connect the bot.** Open `https://<your-worker>.workers.dev/setup` in a browser. It should say *Done!*. Then send `/status` to the bot.
+
+**To undo:** open `https://api.telegram.org/bot<TOKEN>/deleteWebhook`. The tracker falls back to reading Telegram directly at each scheduled check.
+
+**Cost:** each command run uses about 1 Actions minute.
 
 ## Schedule and Actions minutes
 
