@@ -12,8 +12,11 @@ on:
       mode:
         description: "check = setup test, digest = send the morning report now"
         type: choice
-        options: [check, tick, digest, night, auto]
+        options: [check, tick, digest, night, commands, auto]
         default: check
+  # Telegram messages arrive as comments on the "Telegram inbox" issue (see relay/worker.js).
+  issue_comment:
+    types: [created]
 
 # One run at a time, so state commits never collide.
 concurrency:
@@ -22,9 +25,11 @@ concurrency:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   watch:
+    if: github.event_name != 'issue_comment' || github.event.issue.number == 2
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -39,8 +44,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Run
-        run: python -m flightwatch "${{ inputs.mode || 'auto' }}" --state .state
+        run: python -m flightwatch "${{ github.event_name == 'issue_comment' && 'commands' || inputs.mode || 'auto' }}" --state .state
         env:
+          GITHUB_TOKEN: ${{ github.token }}
+          INBOX_ISSUE: "2"
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       - name: Save state

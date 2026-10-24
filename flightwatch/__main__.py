@@ -4,6 +4,7 @@ import sys
 from datetime import date
 
 from .frontier import Frontier
+from .inbox import GitHubInbox
 from .runner import App
 from .state import State
 from .telegram import Telegram
@@ -11,7 +12,7 @@ from .telegram import Telegram
 
 def main(argv=None):
     p = argparse.ArgumentParser(prog="flightwatch", description="Frontier GoWild seat tracker")
-    p.add_argument("mode", choices=["auto", "tick", "night", "digest", "check", "search"])
+    p.add_argument("mode", choices=["auto", "tick", "night", "digest", "check", "commands", "search"])
     p.add_argument("args", nargs="*", help="search: ORIGIN DEST YYYY-MM-DD")
     p.add_argument("--state", default=".state", help="state directory (default .state)")
     a = p.parse_args(argv)
@@ -22,13 +23,16 @@ def main(argv=None):
         return 0
 
     state = State(a.state)
-    app = App(state, Frontier(), Telegram.from_env(), log=lambda m: print(m, flush=True))
+    app = App(state, Frontier(), Telegram.from_env(), log=lambda m: print(m, flush=True),
+              inbox=GitHubInbox.from_env())
     mode = app.pick_mode() if a.mode == "auto" else a.mode
     print(f"mode: {mode}", flush=True)
     try:
         if mode == "digest":
             app.process_commands()
             app.maybe_digest(force=True)
+        elif mode == "commands":
+            app.commands_run()
         else:
             getattr(app, mode)()
     finally:
