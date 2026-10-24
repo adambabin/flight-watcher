@@ -1,9 +1,19 @@
 {
- "alerts": [],
+ "alerts": [
+  {
+   "created": "2026-10-24T20:41:17Z",
+   "date": "2026-10-26",
+   "fired_at": null,
+   "id": 1,
+   "no_seats_noted": {},
+   "open_now": {},
+   "route": null
+  }
+ ],
  "block_notified": null,
  "blocks": [],
  "digest_sent": null,
- "last_check": null,
- "next_alert_id": 1,
- "telegram_offset": 0
+ "last_check": "2026-10-24T20:41:40Z",
+ "next_alert_id": 2,
+ "telegram_offset": 643982119
 }
