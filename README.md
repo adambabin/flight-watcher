@@ -1,1 +1,113 @@
 # flight-watcher
+
+Tracks Frontier **GoWild pass** seats on nonstop flights (ORD ⇄ IAH to start) and talks to you on Telegram:
+
+- **Midnight watch**: checks every couple of minutes from 11:50 PM to 12:15 AM Central, so it records when GoWild seats are actually released.
+- **Release alerts**: `/alert` before bed and you get a ping the moment seats open (or a note that none did).
+- **6 AM report**: flights released overnight (flight number, times, seats left, when they opened) plus how today's flights are doing.
+- **History**: when each flight's GoWild seats opened, sold out, or reopened, kept as JSON on the `state` branch.
+- **Settings from your phone**: pause a direction, set a departure-time window, add routes, change the report time.
+
+## How GoWild works (what this is built around)
+
+- Each GoWild flight costs a $0.01 fare plus taxes and fees, about $15 for a domestic nonstop. Bags and seats are extra.
+- **Domestic GoWild fares open the day before departure**, usually right around **12:00 AM in the departure airport's time zone**. So Wednesday's ORD→IAH seats show up at midnight going into Tuesday, which is late Monday night. More seats can appear during the day when people cancel. International flights open 10 days out (not tracked here).
+- Frontier releases only a handful of GoWild seats per flight, and they're confirmed bookings, not standby.
+- **Blackout dates** have no GoWild fares at all, for example Nov 24–25, Nov 28–30, Dec 19–24 and Dec 26–31, 2026. They're in `flightwatch/rules.py`, posted through April 2027. Add new ones when Frontier posts them.
+- Booking earlier than the window, or on blackout days, has sometimes been offered for an extra fee ($29–$89 early booking, $79–$159 peak day) during promotions.
+
+These rules come from Frontier's GoWild page and FAQ plus third-party guides. Frontier doesn't publish an exact release time, and finding it out is part of what this tracker does.
+
+## How it gets the data
+
+Frontier has no public API. Its normal flight-search page, the one anyone sees logged out, embeds JSON with every flight's GoWild status, price and "N seats left" text. No pass login is needed, so no Frontier credentials are stored anywhere. The site uses DataDome bot protection, so the tracker makes one request at a time, 4–7 seconds apart, with a Chrome-like TLS fingerprint (`curl_cffi`).
+
+**Not affiliated with Frontier.** This is unofficial and could break if Frontier changes its site.
+
+## Setup (about 10 minutes)
+
+1. **Create the bot.** In Telegram, message [@BotFather](https://t.me/BotFather), send `/newbot`, and follow the prompts. Copy the token it gives you.
+2. **Find your chat ID.** Send your new bot any message, such as "hi". Then open `https://api.telegram.org/bot<TOKEN>/getUpdates` in a browser and copy the number in `"chat":{"id":…}`.
+3. **Add two repo secrets.** In GitHub, go to Settings → Secrets and variables → Actions → New repository secret. Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+4. **Merge this into `main`.** GitHub only runs scheduled workflows from the default branch.
+5. **Test it.** Go to Actions → *GoWild watch* → *Run workflow* → mode `check`. Within a minute or two you should get a 🛠 *Setup check* message listing tomorrow's flights.
+   - ✅ means it's working, and scheduled runs take over from here.
+   - ❌ with HTTP 403/405/406 means Frontier is blocking GitHub's servers. See [Running from home](#running-from-home).
+
+## Telegram commands
+
+| Command | What it does |
+|---|---|
+| `/alert` | Ping me when the next release opens (tonight's midnight) |
+| `/alert wed`, `/alert 10/29`, `/alert ORD-IAH fri` | Alert for a specific travel date and/or route |
+| `/alerts`, `/cancel all`, `/cancel wed` | List or cancel alerts |
+| `/nightly on` / `off` | Alert every night, no need to arm it |
+| `/pause IAH-ORD`, `/resume IAH-ORD` | Mute a direction. It's still tracked, just not reported. |
+| `/times ORD-IAH 6am-2pm`, `after 5pm`, `before 9am`, `any` | Only report flights departing in that window |
+| `/add ORD-DEN`, `/remove ORD-DEN` | Track another route (nonstops only) |
+| `/digest 6:00`, `/digest off` | Morning report time |
+| `/history`, `/history IAH-ORD` | Recent release and sell-out times |
+| `/status` | Current settings and armed alerts |
+
+**Dates mean travel dates.** `/alert wed` means Wednesday flights. Their seats open around midnight going into Tuesday, and the bot's reply always says when to expect them.
+
+**Commands aren't instant.** There's no always-on server, so the bot reads your messages at the next run: within about 3 hours during the day, and every couple of minutes during the midnight watch. Arming `/alert` any time before ~11:45 PM is enough for that night.
+
+An alert stays armed until its travel date passes. It pings when seats open, and again if they sell out and later reopen.
+
+## Schedule and Actions minutes
+
+This repo is private, so GitHub Actions gets **2,000 free minutes a month** (on GitHub Free). The schedule is sized to fit:
+
+| When (Central) | What | Rough cost |
+|---|---|---|
+| 11:50 PM – 12:15 AM | Night watch: every 4 min, then every 2 min from 11:58 PM | ~27 min/night |
+| Every 3 hours + 6:05 AM | Check today's and tomorrow's flights, answer commands, send the morning report | ~1–2 min each |
+
+That comes to roughly **1,100–1,500 minutes a month**. Two things follow from that budget:
+- **Sell-out times** are only known to within about 3 hours ("sold out by 10:05 AM").
+- **The morning report** goes out with the first run at or after your chosen time. 6:00 AM is covered by the 6:05 AM run.
+
+Making the repo **public** gives unlimited minutes. You could then tighten `cron` in `.github/workflows/watch.yml` to hourly and stretch the night watch (constants at the top of `flightwatch/runner.py`). The tradeoff is that your settings and history on the `state` branch become public too.
+
+GitHub can start scheduled runs a few minutes late, especially near the top of the hour, which is why the night watch starts at 11:50. If a run starts after midnight, the history says "already open at our first check" instead of guessing a release time.
+
+**Only Central-time midnights are watched closely.** Both ORD and IAH are Central. If you add a route departing from another time zone, it's still checked every 3 hours. To catch its exact midnight, add a cron line for that time zone's 11:50 PM.
+
+## Where the data lives
+
+Every run commits to the **`state` branch**:
+
+- `settings.json`: routes, windows, report time
+- `flights.json`: per flight and date, when GoWild opened (`opened_prev` → `opened_at` brackets the moment), sold out, reopened, plus a seat-count timeline
+- `days.json`: per route and date, when the booking window opened
+- `observations/YYYY-MM.jsonl`: every raw check, for your own analysis
+- `runtime.json`: armed alerts, Telegram bookkeeping
+
+## Running from home
+
+If Frontier blocks GitHub's servers, run the same code on any always-on Mac, Linux box or Raspberry Pi:
+
+```bash
+pip install -r requirements.txt
+export TELEGRAM_BOT_TOKEN=... TELEGRAM_CHAT_ID=...
+python -m flightwatch check --state ~/.flightwatch     # setup test
+```
+
+Then add crontab entries, with the machine's clock on Central time:
+
+```
+50 23 * * *  cd /path/to/flight-watcher && python -m flightwatch auto --state ~/.flightwatch
+5 */3 * * *  cd /path/to/flight-watcher && python -m flightwatch auto --state ~/.flightwatch
+5 6 * * *    cd /path/to/flight-watcher && python -m flightwatch auto --state ~/.flightwatch
+```
+
+## Development
+
+```bash
+pip install -r requirements.txt pytest
+python -m pytest
+python -m flightwatch search ORD IAH 2026-10-28    # raw parsed result for one route/date
+```
+
+Code map: `frontier.py` reads Frontier's page. `tracker.py` turns checks into opened/sold-out history. `runner.py` holds the tick and night-watch logic. `commands.py` and `messages.py` are the Telegram side. `rules.py` has blackout dates.
