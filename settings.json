@@ -1,0 +1,24 @@
+{
+ "digest": {
+  "enabled": true,
+  "time": "06:00"
+ },
+ "nightly_alert": false,
+ "routes": [
+  {
+   "depart_after": null,
+   "depart_before": null,
+   "dest": "IAH",
+   "notify": true,
+   "origin": "ORD"
+  },
+  {
+   "depart_after": null,
+   "depart_before": null,
+   "dest": "ORD",
+   "notify": true,
+   "origin": "IAH"
+  }
+ ],
+ "timezone": "America/Chicago"
+}
