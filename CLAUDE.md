@@ -72,6 +72,24 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 
 `test_runner.released_at_midnight` is the standard fake Frontier: ORD-IAH F9 1234 opens at midnight with 2 seats, and IAH-ORD never opens.
 
+## Backlog (Notion)
+
+The user tracks work in the Notion database **"✈️ GoWild Tracker Backlog"**: https://app.notion.com/p/171f4a15b3ac8356afef81c264e0dece. Read and update it with the Notion MCP tools, using data source `collection://987f4a15-b3ac-83de-8c50-87c77ec7962d`.
+
+When the user says "ticket N", they mean the `ID` property (auto-increment).
+
+| Property | Values |
+|---|---|
+| Status | Backlog, User feedback, In progress, Pending testing, Closed, Never |
+| Type | Feature, Bug, Idea |
+| Theme | Multi-select. Many options are leftovers from another project's template. |
+
+Page templates: "Basic", "Mock options".
+
+Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may contain secrets, so never copy their contents into the repo. As of 2026-10-25:
+- **#5** Check for site updates that would break this (Backlog)
+- **#6** Add the updates to a dashboard (Backlog): view each flight's activity over time, e.g. filter to IAH→ORD 11:36 AM and see what time GoWild seats appear each night and when they sell out, day over day and week over week. The user asked for mockup options to review first.
+
 ## Status (as of 2026-10-25)
 
 Done and live on `main`:
