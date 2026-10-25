@@ -20,40 +20,40 @@
   "window_open_prev": null
  },
  "2026-10-25|IAH-ORD": {
-  "checks": 7,
+  "checks": 8,
   "date": "2026-10-25",
   "first_check": "2026-10-24T20:06:46Z",
-  "last_check": "2026-10-25T14:56:23Z",
+  "last_check": "2026-10-25T15:57:01Z",
   "route": "IAH-ORD",
   "window_closed_seen": false,
   "window_open_at": "2026-10-24T20:06:46Z",
   "window_open_prev": null
  },
  "2026-10-25|ORD-IAH": {
-  "checks": 7,
+  "checks": 8,
   "date": "2026-10-25",
   "first_check": "2026-10-24T20:06:39Z",
-  "last_check": "2026-10-25T14:56:09Z",
+  "last_check": "2026-10-25T15:56:49Z",
   "route": "ORD-IAH",
   "window_closed_seen": false,
   "window_open_at": "2026-10-24T20:06:39Z",
   "window_open_prev": null
  },
  "2026-10-26|IAH-ORD": {
-  "checks": 16,
+  "checks": 17,
   "date": "2026-10-26",
   "first_check": "2026-10-25T04:19:04Z",
-  "last_check": "2026-10-25T14:56:30Z",
+  "last_check": "2026-10-25T15:57:09Z",
   "route": "IAH-ORD",
   "window_closed_seen": false,
   "window_open_at": "2026-10-25T04:19:04Z",
   "window_open_prev": null
  },
  "2026-10-26|ORD-IAH": {
-  "checks": 16,
+  "checks": 17,
   "date": "2026-10-26",
   "first_check": "2026-10-25T04:18:59Z",
-  "last_check": "2026-10-25T14:56:16Z",
+  "last_check": "2026-10-25T15:56:55Z",
   "route": "ORD-IAH",
   "window_closed_seen": false,
   "window_open_at": "2026-10-25T04:18:59Z",
