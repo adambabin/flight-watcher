@@ -3,17 +3,20 @@
   {
    "created": "2026-10-24T20:41:17Z",
    "date": "2026-10-26",
-   "fired_at": null,
+   "fired_at": "2026-10-25T04:18:59Z",
    "id": 1,
    "no_seats_noted": {},
-   "open_now": {},
+   "open_now": {
+    "IAH-ORD": false,
+    "ORD-IAH": true
+   },
    "route": null
   }
  ],
  "block_notified": null,
  "blocks": [],
  "digest_sent": null,
- "last_check": "2026-10-24T23:03:43Z",
+ "last_check": "2026-10-25T05:03:26Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
