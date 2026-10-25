@@ -88,7 +88,10 @@ Page templates: "Basic", "Mock options".
 
 Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may contain secrets, so never copy their contents into the repo. As of 2026-10-25:
 - **#5** Check for site updates that would break this (Backlog)
-- **#6** Add the updates to a dashboard (Backlog): view each flight's activity over time, e.g. filter to IAH→ORD 11:36 AM and see what time GoWild seats appear each night and when they sell out, day over day and week over week. The user asked for mockup options to review first.
+- **#6** Add the updates to a dashboard (User feedback): view each flight's activity over time, e.g. filter to IAH→ORD 11:36 AM and see what time GoWild seats appear each night and when they sell out, day over day and week over week.
+  - The user chose **Notion** as the dashboard home. They want all four views: release-time timeline, open window per day, week-over-week, and seat count through a day.
+  - The mockups are on the subpage "📊 Dashboard mockups" (https://app.notion.com/p/404f4a15b3ac81c096edee5f8a293761). It shows options A–E as linked views over two **SAMPLE** databases under the ticket: "Flight days (SAMPLE)" `collection://00269479-a49c-4308-a8d4-07ea3902e312` (one row per flight per departure date) and "Seat checks (SAMPLE)" `collection://04cd853d-1443-4216-afde-bed70b1e2104` (one row per check).
+  - We're waiting on the user's picks (the questions are at the bottom of that page). Building it for real means the tracker writes those rows after every check. That needs a Notion integration token as a GitHub secret, plus deleting the SAMPLE databases.
 
 ## Status (as of 2026-10-25)
 
