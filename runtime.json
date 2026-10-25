@@ -7,7 +7,7 @@
    "id": 1,
    "no_seats_noted": {},
    "open_now": {
-    "IAH-ORD": false,
+    "IAH-ORD": true,
     "ORD-IAH": true
    },
    "route": null
@@ -16,7 +16,7 @@
  "block_notified": null,
  "blocks": [],
  "digest_sent": null,
- "last_check": "2026-10-25T05:03:26Z",
+ "last_check": "2026-10-25T09:27:02Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
