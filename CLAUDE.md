@@ -8,7 +8,8 @@ A Frontier Airlines **GoWild pass** seat tracker for one user (adambabin), who i
 
 Domain facts the design relies on:
 - Domestic GoWild fares open the day before departure, around midnight going into that day. Wednesday's flights open around midnight going into Tuesday.
-  - **The exact time is unconfirmed.** On 2026-10-24 the ORD→IAH seats for Mon Oct 26 were already open at 11:18 PM CT Saturday, possibly at midnight Eastern. That's why the night watch now covers both midnights.
+  - **The exact time is unconfirmed.** On 2026-10-24 the ORD→IAH seats for Mon Oct 26 were already open at 11:18 PM CT Saturday. On 2026-10-25 at 9:54 PM, both Tue Oct 27 flights were already open, more than a day before the expected release. Hourly ticks now look 3 days out to find the real opening edge; once it's known, move the night watch to it.
+  - Flight numbers and times differ by weekday. On Tue, ORD→IAH is F9 3135 at 2:11 PM and IAH→ORD is F9 3136 at 6:16 PM.
 - Seats are few and can reappear later when people cancel.
 - Blackout dates have no GoWild fares (`flightwatch/rules.py`, posted through Apr 2027; add new dates there when Frontier posts them).
 
@@ -35,7 +36,7 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 - Verified working from GitHub Actions runners on 2026-10-24. At that point Frontier had one nonstop each way: F9 3135 ORD→IAH 7:40 AM, F9 1882 IAH→ORD 11:36 AM.
 
 **Run modes** (`runner.py` `App`), picked by local Central time in `pick_mode()`, because cron is in UTC and covers both DST offsets:
-- `tick` (hourly cron): answer commands, poll today and tomorrow for every route (plus day+2 from 6 PM local, `EVENING_LOOKAHEAD_FROM`), fire alerts, send the digest if it's due (first run at or after `digest.time`, within 6 h).
+- `tick` (hourly cron): answer commands, poll today through `LOOKAHEAD_DAYS` (3) days ahead for every route, fire alerts, send the digest if it's due (first run at or after `digest.time`, within 6 h).
 - `night`: started at 10:40 PM CT by cron (`pick_mode` treats 10:30 PM–12:20 AM as night). It polls only the date about to open (midnight + 1 day) until 12:30 AM. `_next_poll` checks every 4 min, tightening to every 2 min within −3/+12 min of midnight Eastern (`HOT_ZONES`) and local midnight. It processes commands every cycle, arms nightly alerts, and afterwards sends a "no seats" note for armed alerts that saw nothing. Blackout targets fall back to `tick`.
 - `commands`: started by a relayed Telegram message (see below). If it lands in the night window it does `night()` instead. GitHub keeps only one pending run per concurrency group, so a commands run can replace a queued night run, and this keeps the night watch from being lost.
 - All runs share concurrency group `flightwatch` (never parallel), so writes to the state branch never conflict.
