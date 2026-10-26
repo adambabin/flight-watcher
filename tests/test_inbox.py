@@ -49,7 +49,11 @@ class Opener:
 
 
 def test_github_inbox_calls():
-    op = Opener([json.dumps([{"id": 7, "body": "/status"}, {"id": 8, "body": "  "}]).encode(), b""])
+    op = Opener([json.dumps([
+        {"id": 7, "body": "/status", "user": {"login": "AdamBabin"}},
+        {"id": 8, "body": "  ", "user": {"login": "adambabin"}},
+        {"id": 9, "body": "/remove ORD-IAH", "user": {"login": "stranger"}},
+    ]).encode(), b""])
     inbox = GitHubInbox("tok", "adambabin/flight-watcher", 2, opener=op)
     assert inbox.pending() == [(7, "/status")]
     inbox.done(7)
