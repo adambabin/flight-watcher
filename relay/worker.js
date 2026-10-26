@@ -12,11 +12,21 @@
 //   GITHUB_TOKEN        fine-grained token, this repo only, Issues: read and write
 //
 // After deploying, open https://<your-worker>.workers.dev/setup once to point the bot at it.
+//
+// It is also the tracker's clock: GitHub's own schedule drops and delays runs, so add
+// Cron Triggers to this worker (Settings -> Triggers -> Cron Triggers, times in UTC):
+//   5 * * * *       every hour
+//   40 3,4 * * *    10:40 PM Central, the night watch (the pair covers daylight time)
+// Each one posts "/tick" to the inbox issue, which starts a run within seconds.
 
 const REPO = "adambabin/flight-watcher";
 const INBOX_ISSUE = 2;
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(postToInbox(env, "/tick"));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
     const secret = await webhookSecret(env.TELEGRAM_BOT_TOKEN || "");
@@ -38,16 +48,7 @@ export default {
       }
       const msg = (await request.json()).message;
       if (msg && msg.text && String(msg.chat.id) === String(env.TELEGRAM_CHAT_ID)) {
-        const gh = await fetch(`https://api.github.com/repos/${REPO}/issues/${INBOX_ISSUE}/comments`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-            Accept: "application/vnd.github+json",
-            "User-Agent": "gowild-relay",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ body: msg.text }),
-        });
+        const gh = await postToInbox(env, msg.text);
         if (gh.ok) {
           await telegram(env, "setMessageReaction", {
             chat_id: msg.chat.id,
@@ -67,6 +68,19 @@ export default {
     return new Response("GoWild relay is running.");
   },
 };
+
+function postToInbox(env, body) {
+  return fetch(`https://api.github.com/repos/${REPO}/issues/${INBOX_ISSUE}/comments`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+      Accept: "application/vnd.github+json",
+      "User-Agent": "gowild-relay",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ body }),
+  });
+}
 
 async function telegram(env, method, params) {
   const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`, {
