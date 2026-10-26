@@ -93,8 +93,12 @@ class App:
 
     def _answer(self, text):
         self.log(f"command: {text}")
-        if text.strip().lower().split("@")[0] == "/now":
+        word = text.strip().lower().split("@")[0]
+        if word == "/now":
             return self.now_report()
+        if word == "/tick":   # the relay's hourly clock (GitHub's own cron drops runs)
+            self._tick_requested = True
+            return
         reply = commands.handle(self.state, text, self.local_now())
         if reply:
             self.notify(reply)
@@ -190,11 +194,15 @@ class App:
         return "tick"
 
     def commands_run(self):
-        """Started by a relayed Telegram message. Answers it; if this run took the place of
-        the night watch in GitHub's queue, does the night watch too."""
+        """Started by a relayed Telegram message, or the relay's hourly `/tick`. Answers it;
+        in the night window does the night watch (this run may have taken a queued night
+        run's place), and on `/tick` does a normal check."""
         if self.pick_mode() == "night":
             return self.night()
+        self._tick_requested = False
         self.process_commands()
+        if self._tick_requested:
+            return self.tick()
         self.maybe_digest()
 
     def tick(self):

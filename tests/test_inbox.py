@@ -38,6 +38,25 @@ def test_commands_run_in_night_window_does_the_night_watch(state):
     assert fr.calls[-1][3] >= local(2026, 10, 27, 0, 15)
 
 
+def test_relay_tick_runs_a_normal_check(state):
+    clock = Clock(local(2026, 10, 26, 6, 5))
+    app, fr, bot = make_app(state, clock, released_at_midnight)
+    app.inbox = FakeInbox(["/tick"])
+    app.commands_run()
+    assert app.inbox.deleted == [1]
+    assert len({c[2] for c in fr.calls}) == 4          # today through 3 days out
+    assert any("morning report" in m for m in bot.sent)  # the 6 AM report goes out
+    assert not any(m.startswith("Unknown command") for m in bot.sent)
+
+
+def test_relay_tick_in_night_window_does_the_night_watch(state):
+    clock = Clock(local(2026, 10, 26, 22, 41))
+    app, fr, bot = make_app(state, clock, released_at_midnight)
+    app.inbox = FakeInbox(["/tick"])
+    app.commands_run()
+    assert fr.calls[-1][3] >= local(2026, 10, 27, 0, 30)
+
+
 class Opener:
     def __init__(self, bodies):
         self.bodies = list(bodies)

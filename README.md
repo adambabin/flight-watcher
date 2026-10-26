@@ -94,7 +94,9 @@ The repo is **public**, so GitHub Actions minutes are free and unlimited. Your s
 
 **Sell-out times** are known to within about an hour ("sold out by 10:05 AM").
 
-**Late starts:** GitHub can start scheduled runs a few minutes late. If the night watch starts after the seats are already open, the history says "already open at first check" instead of guessing a release time.
+**The clock is the Cloudflare relay.** GitHub's own schedule turned out to delay runs by an hour or more and to drop many of them; on the night of Oct 25 it skipped the night watch and the 6 AM report. So the relay worker has two Cron Triggers, `5 * * * *` and `40 3,4 * * *` (UTC). Each posts `/tick` to the inbox issue, which starts a run within seconds. GitHub's cron stays on as a backup, and duplicate runs are harmless.
+
+**Late starts:** if a run still starts late If the night watch starts after the seats are already open, the history says "already open at first check" instead of guessing a release time.
 
 **Other time zones:** only Central-time nights are watched closely. A route departing from another time zone is still checked hourly. To catch its exact release, add a cron line for that zone's 10:40 PM.
 
