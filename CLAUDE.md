@@ -99,16 +99,16 @@ Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may co
   - Older Notion mockup page (kept for comparison): https://app.notion.com/p/404f4a15b3ac81c096edee5f8a293761. Its SAMPLE databases are `collection://00269479-a49c-4308-a8d4-07ea3902e312` and `collection://04cd853d-1443-4216-afde-bed70b1e2104`.
   - To build it for real, the tracker appends rows to the sheet after every check. That needs a Google service-account key as a GitHub secret, with the sheet shared to that account. After that, delete the sample rows and the Notion SAMPLE databases.
 
-## Status (as of 2026-10-25)
+## Status (as of 2026-10-26)
 
 Done and live on `main`:
 - The tracker (PR #1) and the relay support (PR #3).
 - Secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are set, and the bot works: the setup check, commands and `/status` were all answered.
 - The user armed `/alert` for Mon Oct 26 flights.
 
-Pending, waiting on the user at a computer:
-1. **Create the fine-grained PAT**: github.com/settings/personal-access-tokens/new. Settings: only `flight-watcher`, Issues: Read and write. The mobile Safari "Generate token" confirmation button didn't respond, so the user will retry on desktop.
-2. **Deploy `relay/worker.js` on Cloudflare Workers** (free) with secrets `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `GITHUB_TOKEN` (the PAT). Then open `https://<worker>.workers.dev/setup` and send `/status` to test. Full steps are in the README under "Fast replies".
+- The relay is live (2026-10-26): Cloudflare Worker `gowild-relay` with secrets `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `GITHUB_TOKEN`, webhook set via `/setup`, and `/status` sent from Telegram got a fast reply.
+  - `GITHUB_TOKEN` is the fine-grained PAT `gowild-relay` (only `flight-watcher`, Issues: Read and write). It **expires Thu, Oct 14 2027**. Before then, regenerate it on GitHub and replace the worker secret, or the relay stops forwarding and replies fall back to scheduled runs.
+  - The PAT's "Generate token" confirmation looks like it does nothing (mobile and desktop) but the token does get created. Its value is shown only once, so if it's lost, use "Regenerate token".
 
 Ideas raised but not done:
 - **Public repo**: unlimited minutes would allow hourly checks and a longer night window. The tradeoff is that the state branch becomes public.
