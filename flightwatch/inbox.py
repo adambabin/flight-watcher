@@ -2,7 +2,8 @@
 
 Once the relay (relay/worker.js) is set up, Telegram delivers messages to it instead
 of holding them for getUpdates, so this is where commands come from. Each comment is
-deleted after it's answered.
+deleted after it's answered. Only comments by the repo owner count: in a public repo
+anyone can comment, and their text must never become a command.
 """
 import json
 import os
@@ -12,10 +13,11 @@ API = "https://api.github.com"
 
 
 class GitHubInbox:
-    def __init__(self, token, repo, issue, opener=None):
+    def __init__(self, token, repo, issue, opener=None, owner=None):
         self.token = token
         self.repo = repo
         self.issue = issue
+        self.owner = (owner or repo.split("/")[0]).lower()
         self._open = opener or urllib.request.urlopen
 
     @classmethod
@@ -38,7 +40,9 @@ class GitHubInbox:
     def pending(self):
         """[(comment_id, text)], oldest first."""
         comments = self._call("GET", f"/repos/{self.repo}/issues/{self.issue}/comments?per_page=100")
-        return [(c["id"], c["body"]) for c in comments if (c.get("body") or "").strip()]
+        return [(c["id"], c["body"]) for c in comments
+                if (c.get("body") or "").strip()
+                and ((c.get("user") or {}).get("login") or "").lower() == self.owner]
 
     def done(self, comment_id):
         self._call("DELETE", f"/repos/{self.repo}/issues/comments/{comment_id}")
