@@ -83,24 +83,34 @@ Telegram can't start a GitHub run by itself. A tiny free Cloudflare Worker (`rel
 
 **Cost:** each command run uses about 1 Actions minute.
 
-## Schedule and Actions minutes
+## Schedule
 
-This repo is private, so GitHub Actions gets **2,000 free minutes a month** (on GitHub Free). The schedule is sized to fit:
+The repo is **public**, so GitHub Actions minutes are free and unlimited. Your secrets (bot token, chat ID) stay private in GitHub's secret store and never appear in code or logs.
 
-| When (Central) | What | Rough cost |
-|---|---|---|
-| 11:50 PM – 12:15 AM | Night watch: every 4 min, then every 2 min from 11:58 PM | ~27 min/night |
-| Every 3 hours + 6:05 AM | Check today's and tomorrow's flights, answer commands, send the morning report | ~1–2 min each |
+| When (Central) | What |
+|---|---|
+| 10:40 PM – 12:30 AM | **Night watch:** checks the date about to open every 4 minutes, and every 2 minutes from 10:57–11:12 PM (midnight Eastern) and 11:57 PM–12:12 AM (midnight Central). GoWild seats have shown up before midnight Central. |
+| Every hour at :05 | Checks today's and tomorrow's flights. From 6 PM it also checks the day after, to catch an early release. It also answers commands and sends the 6 AM report. |
 
-That comes to roughly **1,100–1,500 minutes a month**. Two things follow from that budget:
-- **Sell-out times** are only known to within about 3 hours ("sold out by 10:05 AM").
-- **The morning report** goes out with the first run at or after your chosen time. 6:00 AM is covered by the 6:05 AM run.
+**Sell-out times** are known to within about an hour ("sold out by 10:05 AM").
 
-Making the repo **public** gives unlimited minutes. You could then tighten `cron` in `.github/workflows/watch.yml` to hourly and stretch the night watch (constants at the top of `flightwatch/runner.py`). The tradeoff is that your settings and history on the `state` branch become public too.
+**Late starts:** GitHub can start scheduled runs a few minutes late. If the night watch starts after the seats are already open, the history says "already open at first check" instead of guessing a release time.
 
-GitHub can start scheduled runs a few minutes late, especially near the top of the hour, which is why the night watch starts at 11:50. If a run starts after midnight, the history says "already open at our first check" instead of guessing a release time.
+**Other time zones:** only Central-time nights are watched closely. A route departing from another time zone is still checked hourly. To catch its exact release, add a cron line for that zone's 10:40 PM.
 
-**Only Central-time midnights are watched closely.** Both ORD and IAH are Central. If you add a route departing from another time zone, it's still checked every 3 hours. To catch its exact midnight, add a cron line for that time zone's 11:50 PM.
+## Dashboard (GitHub Pages)
+
+`docs/index.html` is an interactive dashboard. It has:
+- **A flight picker:** each flight labeled with route and times, e.g. "F9 1882 · IAH → ORD · 11:36 AM → 2:25 PM".
+- **Open-window bars** for each night.
+- **Release times:** what time seats appeared each night.
+- **Week-over-week bars:** tap a weekday to filter the page to it.
+- **Seat counts** through one departure.
+- **A day-by-day table.**
+
+After every run, the tracker writes `dashboard.json` to the `state` branch, and the page reads it from `raw.githubusercontent.com`, so it's always current (GitHub caches the file for up to ~5 minutes).
+
+**Turn it on once:** go to repo Settings → Pages → Build and deployment → Source: **Deploy from a branch** → Branch: **main**, folder **/docs** → Save. The site appears at https://adambabin.github.io/flight-watcher/.
 
 ## Where the data lives
 
@@ -111,6 +121,7 @@ Every run commits to the **`state` branch**:
 - `days.json`: per route and date, when the booking window opened
 - `observations/YYYY-MM.jsonl`: every raw check, for your own analysis
 - `runtime.json`: armed alerts, Telegram bookkeeping
+- `dashboard.json`: what the Pages dashboard draws
 
 ## Running from home
 

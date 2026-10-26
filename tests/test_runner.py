@@ -18,8 +18,8 @@ def released_at_midnight(origin, dest, dep, now):
 
 def test_pick_mode():
     for when, mode in [(local(2026, 10, 26, 23, 50), "night"), (local(2026, 10, 27, 0, 5), "night"),
-                       (local(2026, 10, 26, 22, 45), "tick"), (local(2026, 10, 27, 0, 45), "tick"),
-                       (local(2026, 10, 27, 6, 5), "tick")]:
+                       (local(2026, 10, 26, 22, 40), "night"), (local(2026, 10, 26, 22, 5), "tick"),
+                       (local(2026, 10, 27, 0, 25), "tick"), (local(2026, 10, 27, 6, 5), "tick")]:
         app, _, _ = make_app(State("/nonexistent"), Clock(when), released_at_midnight)
         assert app.pick_mode() == mode, when
 
@@ -29,11 +29,11 @@ def test_night_watch_catches_release_and_alerts_once(state):
     app, fr, bot = make_app(state, clock, released_at_midnight, inbox=["/alert"])
     app.night()
 
-    # Checked Wednesday's flights only, every few minutes, and stopped after 12:15 AM.
+    # Checked Wednesday's flights only, every few minutes, and stopped after 12:30 AM.
     assert {c[2].isoformat() for c in fr.calls} == {"2026-10-28"}
     last = fr.calls[-1][3]
-    assert local(2026, 10, 27, 0, 15) <= last < local(2026, 10, 27, 0, 18)
-    assert len(fr.calls) <= 2 * 14
+    assert local(2026, 10, 27, 0, 30) <= last < local(2026, 10, 27, 0, 35)
+    assert len(fr.calls) <= 2 * 25
 
     opened = [m for m in bot.sent if m.startswith("🟢")]
     assert len(opened) == 1
@@ -126,3 +126,29 @@ def test_blackout_night_skips_watch(state):
     app, fr, bot = make_app(state, clock, released_at_midnight)
     app.night()
     assert {c[2].isoformat() for c in fr.calls} <= {"2026-11-23"}
+
+
+def test_night_watch_tightens_around_both_midnights(state):
+    start = local(2026, 10, 26, 22, 40)
+    clock = Clock(start)
+    app, fr, bot = make_app(state, clock, released_at_midnight)
+    app.night()
+    # Minutes after 10:40 PM of each ORD-IAH check, in order.
+    mins = [round((c[3] - start).total_seconds() / 60) for c in fr.calls if c[0] == "ORD"]
+    gaps = dict(zip(mins, (b - a for a, b in zip(mins, mins[1:]))))
+    assert mins[0] == 0 and 110 <= mins[-1] < 115           # 10:40 PM until just past 12:30 AM
+    assert all(g <= 4 for g in gaps.values())
+    assert max(g for m, g in gaps.items() if 18 <= m <= 30) <= 2   # 10:58-11:10 PM (midnight Eastern)
+    assert max(g for m, g in gaps.items() if 78 <= m <= 90) <= 2   # 11:58 PM-12:10 AM
+    assert min(g for m, g in gaps.items() if 40 <= m <= 70) == 4   # quieter in between
+
+
+def test_evening_tick_also_checks_two_days_out(state):
+    clock = Clock(local(2026, 10, 26, 19, 5))
+    app, fr, bot = make_app(state, clock, released_at_midnight)
+    app.tick()
+    assert sorted({c[2].isoformat() for c in fr.calls}) == ["2026-10-26", "2026-10-27", "2026-10-28"]
+    fr.calls.clear()
+    clock.t = local(2026, 10, 27, 9, 5).astimezone(clock.t.tzinfo)
+    app.tick()
+    assert sorted({c[2].isoformat() for c in fr.calls}) == ["2026-10-27", "2026-10-28"]

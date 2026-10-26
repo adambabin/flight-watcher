@@ -3,6 +3,7 @@ import json
 import sys
 from datetime import date
 
+from . import dashboard
 from .frontier import Frontier
 from .inbox import GitHubInbox
 from .runner import App
@@ -37,6 +38,7 @@ def main(argv=None):
             getattr(app, mode)()
     finally:
         state.save()
+        dashboard.write(state, app.local_now())
     return 0
 
 
