@@ -90,7 +90,7 @@ The repo is **public**, so GitHub Actions minutes are free and unlimited. Your s
 | When (Central) | What |
 |---|---|
 | 10:40 PM – 12:30 AM | **Night watch:** checks the date about to open every 4 minutes, and every 2 minutes from 10:57–11:12 PM (midnight Eastern) and 11:57 PM–12:12 AM (midnight Central). GoWild seats have shown up before midnight Central. |
-| Every hour at :05 | Checks today's and tomorrow's flights. From 6 PM it also checks the day after, to catch an early release. It also answers commands and sends the 6 AM report. |
+| Every hour at :05 | Checks flights from today through 3 days out. Seats have opened well before the night before, so this finds when they really appear. It also answers commands and sends the 6 AM report. |
 
 **Sell-out times** are known to within about an hour ("sold out by 10:05 AM").
 

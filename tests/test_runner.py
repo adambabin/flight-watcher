@@ -125,7 +125,9 @@ def test_blackout_night_skips_watch(state):
     clock = Clock(local(2026, 11, 23, 23, 50))  # Tue Nov 24 opens Wed Nov 25: both blackout
     app, fr, bot = make_app(state, clock, released_at_midnight)
     app.night()
-    assert {c[2].isoformat() for c in fr.calls} <= {"2026-11-23"}
+    # Falls back to one ordinary tick: blackout dates (Nov 24, 25) are never checked.
+    assert {c[2].isoformat() for c in fr.calls} == {"2026-11-23", "2026-11-26"}
+    assert len(fr.calls) == 4
 
 
 def test_night_watch_tightens_around_both_midnights(state):
@@ -143,12 +145,8 @@ def test_night_watch_tightens_around_both_midnights(state):
     assert min(g for m, g in gaps.items() if 40 <= m <= 70) == 4   # quieter in between
 
 
-def test_evening_tick_also_checks_two_days_out(state):
-    clock = Clock(local(2026, 10, 26, 19, 5))
+def test_tick_checks_three_days_out(state):
+    clock = Clock(local(2026, 10, 26, 9, 5))
     app, fr, bot = make_app(state, clock, released_at_midnight)
     app.tick()
-    assert sorted({c[2].isoformat() for c in fr.calls}) == ["2026-10-26", "2026-10-27", "2026-10-28"]
-    fr.calls.clear()
-    clock.t = local(2026, 10, 27, 9, 5).astimezone(clock.t.tzinfo)
-    app.tick()
-    assert sorted({c[2].isoformat() for c in fr.calls}) == ["2026-10-27", "2026-10-28"]
+    assert sorted({c[2].isoformat() for c in fr.calls}) == ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29"]
