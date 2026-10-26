@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Frontier Airlines **GoWild pass** seat tracker for one user (adambabin), who is based in Chicago. It watches nonstop ORD ⇄ IAH flights (more routes can be added), records when GoWild seats are released and when they sell out, and reports over a Telegram bot. It runs entirely on GitHub Actions, and the repo is **private**, so the schedule is sized for the 2,000 free Actions minutes a month.
+A Frontier Airlines **GoWild pass** seat tracker for one user (adambabin), who is based in Chicago. It watches nonstop ORD ⇄ IAH flights (more routes can be added), records when GoWild seats are released and when they sell out, and reports over a Telegram bot. It runs entirely on GitHub Actions. The repo is **public** (since 2026-10-26), so Actions minutes are unlimited. Never commit secrets: they live in GitHub/Cloudflare secret stores.
 
 Domain facts the design relies on:
-- Domestic GoWild fares open the day before departure, around **12:00 AM in the origin airport's time zone**. Wednesday's flights open at midnight going into Tuesday.
+- Domestic GoWild fares open the day before departure, around midnight going into that day. Wednesday's flights open around midnight going into Tuesday.
+  - **The exact time is unconfirmed.** On 2026-10-24 the ORD→IAH seats for Mon Oct 26 were already open at 11:18 PM CT Saturday, possibly at midnight Eastern. That's why the night watch now covers both midnights.
 - Seats are few and can reappear later when people cancel.
 - Blackout dates have no GoWild fares (`flightwatch/rules.py`, posted through Apr 2027; add new dates there when Frontier posts them).
 
@@ -34,8 +35,8 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 - Verified working from GitHub Actions runners on 2026-10-24. At that point Frontier had one nonstop each way: F9 3135 ORD→IAH 7:40 AM, F9 1882 IAH→ORD 11:36 AM.
 
 **Run modes** (`runner.py` `App`), picked by local Central time in `pick_mode()`, because cron is in UTC and covers both DST offsets:
-- `tick`: answer commands, poll today and tomorrow for every route, fire alerts, send the digest if it's due (first run at or after `digest.time`, within 6 h).
-- `night`: started at 11:50 PM by cron. It polls only the date about to open (midnight + 1 day), every 4 min and then every 2 min from 11:58 PM until 12:15 AM. It processes commands every cycle, arms nightly alerts, and afterwards sends a "no seats" note for armed alerts that saw nothing. Blackout targets fall back to `tick`.
+- `tick` (hourly cron): answer commands, poll today and tomorrow for every route (plus day+2 from 6 PM local, `EVENING_LOOKAHEAD_FROM`), fire alerts, send the digest if it's due (first run at or after `digest.time`, within 6 h).
+- `night`: started at 10:40 PM CT by cron (`pick_mode` treats 10:30 PM–12:20 AM as night). It polls only the date about to open (midnight + 1 day) until 12:30 AM. `_next_poll` checks every 4 min, tightening to every 2 min within −3/+12 min of midnight Eastern (`HOT_ZONES`) and local midnight. It processes commands every cycle, arms nightly alerts, and afterwards sends a "no seats" note for armed alerts that saw nothing. Blackout targets fall back to `tick`.
 - `commands`: started by a relayed Telegram message (see below). If it lands in the night window it does `night()` instead. GitHub keeps only one pending run per concurrency group, so a commands run can replace a queued night run, and this keeps the night watch from being lost.
 - All runs share concurrency group `flightwatch` (never parallel), so writes to the state branch never conflict.
 
@@ -61,6 +62,13 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 - Measured: comment → reply in about 11 s.
 
 **Messages** (`messages.py`): Telegram HTML parse mode. Escape anything user-supplied. Flight and check times show in the route's origin-airport tz (`airports.py`), with the weekday added when the date differs from the departure date.
+
+**Dashboard** (`dashboard.py`, `docs/index.html`): after every run, `__main__` calls `dashboard.write`, which writes `.state/dashboard.json` as `{generated_at, days:{columns,rows}, checks:{columns,rows}}`.
+- **days:** one row per flight-date. Flight labels look like `F9 1882 · IAH → ORD · 11:36 AM → 2:25 PM`. Times are local wall time `YYYY-MM-DD HH:MM`, and "Release known" is false when the flight was already open at the first check.
+- **Outcome:** Open now / Open at departure / Sold out / Never opened (only when watched from before the release night) / No seats seen / Not open yet.
+- **checks:** every observation for the last 14 departure dates. "Seats left" is null when the flight is open but Frontier showed no count.
+- **The page:** `docs/index.html` is a standalone GitHub Pages page (d3 from cdnjs). It fetches the JSON from `raw.githubusercontent.com/adambabin/flight-watcher/state/dashboard.json`.
+- **Testing the page:** render it with Playwright, routing that URL and d3 to local files (cdnjs is blocked in the cloud sandbox; d3 is available from npm).
 
 ## Testing conventions
 
@@ -97,7 +105,11 @@ Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may co
     - `Dashboard`: a flight dropdown in B2, a summary line, and 5 charts (release time, open window as a stacked-column Gantt, weekday avg hours open, weekday avg seats, seats-left stepped area).
   - The user wants flights labeled with route and times: `F9 1882 · IAH → ORD · 11:36 AM → 2:25 PM`. The real arrivals are 2:25 PM for F9 1882 and 10:39 AM for F9 3135.
   - Older Notion mockup page (kept for comparison): https://app.notion.com/p/404f4a15b3ac81c096edee5f8a293761. Its SAMPLE databases are `collection://00269479-a49c-4308-a8d4-07ea3902e312` and `collection://04cd853d-1443-4216-afde-bed70b1e2104`.
-  - To build it for real, the tracker appends rows to the sheet after every check. That needs a Google service-account key as a GitHub secret, with the sheet shared to that account. After that, delete the sample rows and the Notion SAMPLE databases.
+  - Superseded by the interactive dashboard ticket below. The Sheets and Notion mockups can be deleted once it's live.
+- **Interactive flight-history dashboard (live data)** (In progress): https://app.notion.com/p/405f4a15b3ac810ba97de1434c47c91b. The user tracks requests and progress for the dashboard here, so update it as work lands.
+  - The real dashboard is the GitHub Pages site `docs/index.html`, at https://adambabin.github.io/flight-watcher/ once Pages is enabled.
+  - There's also a claude.ai prototype of the same design, the "Dashboard"-type artifact https://claude.ai/artifact/MhXfXxwBTdroGj5ydFASnE. It reads the sample Google Sheet through the viewer's Google Sheets connector.
+- **GoWild seats opened before midnight: widen the night watch** (Bug): https://app.notion.com/p/405f4a15b3ac818e96c3d68854b3b0db. The fix shipped with the 10:40 PM night watch and evening day+2 checks. Confirm the real release time after a week of data.
 
 ## Status (as of 2026-10-26)
 

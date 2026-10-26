@@ -1,10 +1,11 @@
 """The two kinds of run.
 
-tick:  answer Telegram commands, check today's and tomorrow's flights on every route,
-       fire armed alerts, send the morning report when it's due.
-night: started a little before midnight; checks the date that's about to open every
-       couple of minutes until shortly after midnight, so we see the exact release and
-       can ping right away.
+tick:  answer Telegram commands, check today's and tomorrow's flights on every route
+       (and, in the evening, the day after, in case it opens early), fire armed alerts,
+       send the morning report when it's due.
+night: started at 10:40 PM; checks the date that's about to open every few minutes
+       until 12:30 AM, every 2 minutes around midnight Eastern and midnight local, so we
+       see the exact release and can ping right away.
 """
 import time
 from datetime import datetime, timedelta, timezone
@@ -16,10 +17,13 @@ from .frontier import FrontierError
 from .state import route_key
 from .timeutil import iso, parse_clock, parse_iso
 
-NIGHT_START = (23, 15)          # local time from which a run counts as the night watch
-NIGHT_END_AFTER_MIDNIGHT = 15   # minutes
-POLL_BEFORE_MIDNIGHT = 4        # minutes between checks before 11:58 PM
-POLL_AROUND_MIDNIGHT = 2        # minutes between checks from 11:58 PM on
+NIGHT_START = (22, 30)          # local time from which a run counts as the night watch
+NIGHT_END_AFTER_MIDNIGHT = 30   # minutes
+NIGHT_LATE_START = 20           # a run starting this many minutes after midnight still watches
+POLL_EVERY = 4                  # minutes between checks
+POLL_HOT = 2                    # minutes between checks around a likely release moment
+HOT_ZONES = ("America/New_York",)   # midnights besides the local one where seats have shown up
+EVENING_LOOKAHEAD_FROM = 18     # from this local hour, ticks also check the day after tomorrow
 NIGHT_MAX_BLOCKS = 3
 DIGEST_LATE_LIMIT = timedelta(hours=6)
 
@@ -181,7 +185,7 @@ class App:
 
     def pick_mode(self):
         t = self.local_now()
-        if (t.hour, t.minute) >= NIGHT_START or (t.hour == 0 and t.minute < NIGHT_END_AFTER_MIDNIGHT - 5):
+        if (t.hour, t.minute) >= NIGHT_START or (t.hour == 0 and t.minute < NIGHT_LATE_START):
             return "night"
         return "tick"
 
@@ -199,7 +203,9 @@ class App:
         try:
             for route in self.state.routes():
                 today = self.route_today(route)
-                for dep in (today, today + timedelta(days=1)):
+                ahead = 2 if self.local_now().hour >= EVENING_LOOKAHEAD_FROM else 1
+                for i in range(ahead + 1):
+                    dep = today + timedelta(days=i)
                     if not rules.is_blackout(dep):
                         self.poll(route, dep, "tick")
         except Blocked:
@@ -237,13 +243,25 @@ class App:
             now_l = self.local_now()
             if now_l >= end:
                 break
-            if now_l < midnight - timedelta(minutes=2):
-                nxt = min(now_l + timedelta(minutes=POLL_BEFORE_MIDNIGHT), midnight - timedelta(minutes=1))
-            else:
-                nxt = now_l + timedelta(minutes=POLL_AROUND_MIDNIGHT)
+            nxt = self._next_poll(now_l, midnight)
             self.sleep(max(0.0, (nxt - now_l).total_seconds()))
 
         self._report_no_seats(target)
+
+    def _next_poll(self, now_l, midnight):
+        """Every POLL_EVERY minutes, tightening to POLL_HOT from 3 minutes before to 12 after
+        each likely release moment (midnight Eastern, midnight local)."""
+        day = midnight.date()
+        hot = [midnight] + [datetime(day.year, day.month, day.day, tzinfo=ZoneInfo(z)) for z in HOT_ZONES]
+        for h in hot:
+            if h - timedelta(minutes=3) <= now_l < h + timedelta(minutes=12):
+                return now_l + timedelta(minutes=POLL_HOT)
+        nxt = now_l + timedelta(minutes=POLL_EVERY)
+        for h in hot:
+            start = h - timedelta(minutes=3)
+            if now_l < start < nxt:
+                nxt = start
+        return nxt
 
     def _report_no_seats(self, target):
         until = self._now()

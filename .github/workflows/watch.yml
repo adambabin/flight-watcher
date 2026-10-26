@@ -1,12 +1,12 @@
 name: GoWild watch
 
 # Cron times are UTC. The script itself decides what to do from the Central time it
-# starts at, so each pair below covers both daylight and standard time.
+# starts at, so the night pair covers both daylight and standard time.
+# The repo is public, so Actions minutes are free; checks run hourly.
 on:
   schedule:
-    - cron: "50 4,5 * * *"   # 11:50 PM Central: night watch through 12:15 AM (the other one is a normal check)
-    - cron: "5 */3 * * *"    # every 3 hours: check today + tomorrow, answer Telegram commands
-    - cron: "5 11 * * *"     # 6:05 AM CDT morning report (12:05 UTC above covers CST)
+    - cron: "40 3,4 * * *"   # 10:40 PM Central: night watch through 12:30 AM (the other one is a normal check)
+    - cron: "5 * * * *"      # hourly: today + tomorrow (+ the day after, evenings), commands, 6 AM report
   workflow_dispatch:
     inputs:
       mode:
@@ -34,7 +34,7 @@ jobs:
       github.event_name != 'issue_comment' ||
       (github.event.issue.number == 2 && github.event.comment.user.login == github.repository_owner)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
