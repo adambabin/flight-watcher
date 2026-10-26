@@ -89,9 +89,15 @@ Page templates: "Basic", "Mock options".
 Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may contain secrets, so never copy their contents into the repo. As of 2026-10-25:
 - **#5** Check for site updates that would break this (Backlog)
 - **#6** Add the updates to a dashboard (User feedback): view each flight's activity over time, e.g. filter to IAH→ORD 11:36 AM and see what time GoWild seats appear each night and when they sell out, day over day and week over week.
-  - The user chose **Notion** as the dashboard home. They want all four views: release-time timeline, open window per day, week-over-week, and seat count through a day.
-  - The mockups are on the subpage "📊 Dashboard mockups" (https://app.notion.com/p/404f4a15b3ac81c096edee5f8a293761). It shows options A–E as linked views over two **SAMPLE** databases under the ticket: "Flight days (SAMPLE)" `collection://00269479-a49c-4308-a8d4-07ea3902e312` (one row per flight per departure date) and "Seat checks (SAMPLE)" `collection://04cd853d-1443-4216-afde-bed70b1e2104` (one row per check).
-  - We're waiting on the user's picks (the questions are at the bottom of that page). Building it for real means the tracker writes those rows after every check. That needs a Notion integration token as a GitHub secret, plus deleting the SAMPLE databases.
+  - Dashboard home: **Google Sheets**. Notion was tried first, but its free plan shows only one chart.
+  - The mockup is "GoWild Dashboard (SAMPLE mockup)" in the user's Drive: https://docs.google.com/spreadsheets/d/1bWLkpPrWtrwbJJM5HzPuEezgR1D58-ygOzn4gI5-WGk. Edit it with the Google Sheets MCP tools.
+    - `Flight days`: one row per flight per departure date, with columns Flight label, Flight #, From, To, Departs, Arrives, Date, Weekday, Released at, Release (min after midnight), Sold out at, Hours open, Max seats seen, Reopened, Outcome.
+    - `Seat checks`: one row per check (Flight label, Date, Checked at, Hours since release, Seats left, GoWild open).
+    - `Day by day`: FILTER/AVERAGEIFS formulas keyed on `Dashboard!B2`, covering the last 30 days, week-over-week by weekday, and the latest day's seat checks.
+    - `Dashboard`: a flight dropdown in B2, a summary line, and 5 charts (release time, open window as a stacked-column Gantt, weekday avg hours open, weekday avg seats, seats-left stepped area).
+  - The user wants flights labeled with route and times: `F9 1882 · IAH → ORD · 11:36 AM → 2:25 PM`. The real arrivals are 2:25 PM for F9 1882 and 10:39 AM for F9 3135.
+  - Older Notion mockup page (kept for comparison): https://app.notion.com/p/404f4a15b3ac81c096edee5f8a293761. Its SAMPLE databases are `collection://00269479-a49c-4308-a8d4-07ea3902e312` and `collection://04cd853d-1443-4216-afde-bed70b1e2104`.
+  - To build it for real, the tracker appends rows to the sheet after every check. That needs a Google service-account key as a GitHub secret, with the sheet shared to that account. After that, delete the sample rows and the Notion SAMPLE databases.
 
 ## Status (as of 2026-10-25)
 
