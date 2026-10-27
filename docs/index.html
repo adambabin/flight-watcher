@@ -77,6 +77,8 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
 .pill.sold { color: var(--muted); }
 .pill.none { color: var(--bad); border-color: currentColor; }
 .err { color: var(--bad); }
+.alert { border: 1px solid var(--bad); color: var(--bad); background: var(--panel); border-radius: var(--radius); padding: 10px 14px; overflow-wrap: anywhere; }
+.alert code { font-size: 12px; color: var(--fg); }
 /* Phones: one dropdown instead of a wall of flight chips; 16px controls so iOS doesn't zoom on focus. */
 @media (max-width: 40rem) {
   .picker .chips { display: none; }
@@ -101,6 +103,7 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
     <p class="take" id="takeaway">Loading the tracker's latest data…</p>
   </header>
   <div class="meta"><span id="updated">—</span><button class="link" id="reload">Refresh</button><span id="error" class="err" hidden></span></div>
+  <div class="alert" id="health" role="status" hidden></div>
 
   <nav class="picker" id="flights" aria-label="Flight"></nav>
 
@@ -455,6 +458,14 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
       if (firstData) setTimeout(() => document.body.classList.remove('first'), 600);
       const g = new Date(j.generated_at);
       $('#updated').textContent = `Updated ${g.toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })} · ${days.length} flight-days tracked`;
+      const h = j.health || {};
+      $('#health').hidden = !h.failing;
+      if (h.failing) {
+        const since = h.failing_since ? new Date(h.failing_since.replace(' ', 'T')).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : '?';
+        $('#health').replaceChildren(
+          `⚠️ Frontier checks have been failing since ${since}, so recent nights may be missing. Latest error: `,
+          Object.assign(document.createElement('code'), { textContent: h.last_error || '?' }));
+      }
       if (!days.length) $('#takeaway').textContent = 'No flights tracked yet. The tracker fills this in after its next check.';
       draw();
     } catch (e) {

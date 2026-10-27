@@ -22,12 +22,14 @@ MAX_GAP = 7.0
 
 
 class FrontierError(Exception):
-    """Frontier refused or returned something we can't read. `blocked` = bot wall / rate limit."""
+    """Frontier refused or returned something we can't read. `blocked` = bot wall / rate limit.
+    `layout` = the page came back but isn't shaped the way the parser expects (a redesign)."""
 
-    def __init__(self, msg, status=None, blocked=False):
+    def __init__(self, msg, status=None, blocked=False, layout=False):
         super().__init__(msg)
         self.status = status
         self.blocked = blocked
+        self.layout = layout
 
 
 def search_url(origin, dest, d):
@@ -42,6 +44,8 @@ class Frontier:
         self._session = None
         self._sleep = sleep
         self._last_request = 0.0
+        self.last_url = None
+        self.last_page = None   # raw HTML of the latest response, kept for failure snapshots
 
     def reset(self):
         """Drop cookies and start over; sometimes enough to get past a soft block."""
@@ -56,9 +60,11 @@ class Frontier:
         try:
             r = self._session.get(url, timeout=40, allow_redirects=True)
         except Exception as e:
+            self.last_url, self.last_page = url, None
             raise FrontierError(f"network error: {e}") from None
         finally:
             self._last_request = time.time()
+        self.last_url, self.last_page = url, r.text
         if r.status_code != 200:
             body = (r.text or "")[:500].lower()
             blocked = r.status_code in (403, 405, 406, 429) or "captcha" in body or "datadome" in body
@@ -136,8 +142,36 @@ def _extract_flight_data(page):
             except ValueError:
                 pass
     low = page.lower()
-    raise FrontierError("no flight data on select page",
-                        blocked="captcha" in low or "datadome" in low)
+    if "captcha" in low or "datadome" in low:
+        raise FrontierError("no flight data on select page", blocked=True)
+    raise _layout_error("no FlightData on the select page")
+
+
+def _layout_error(why):
+    return FrontierError(f"Frontier's page layout changed: {why}", layout=True)
+
+
+def _check_layout(data):
+    """Fail loudly when the fields we rely on are gone, instead of reading every flight as
+    "no GoWild". A renamed field would otherwise look exactly like a night with no seats."""
+    if not isinstance(data, dict) or not isinstance(data.get("journeys"), list):
+        raise _layout_error("no journeys list")
+    flights = []
+    for j in data["journeys"]:
+        if not isinstance(j, dict) or not isinstance(j.get("flights"), list):
+            raise _layout_error("a journey has no flights list")
+        flights += j["flights"]
+    if not flights:
+        return
+    if not all(isinstance(f, dict) and isinstance(f.get("legs"), list) for f in flights):
+        raise _layout_error("a flight has no legs list")
+    legs = [l for f in flights for l in f["legs"]]
+    if not legs or not all(isinstance(l, dict) and l.get("departureDate") and l.get("flightNumber")
+                           for l in legs):
+        raise _layout_error("flight legs are missing departureDate/flightNumber")
+    for key in ("isGoWildFareEnabled", "goWildFare"):
+        if not any(key in f for f in flights):
+            raise _layout_error(f"no flight has {key}")
 
 
 def _price(v):
@@ -162,6 +196,7 @@ def parse_select_page(page):
     gowild (bool), price, seats (int|None), seats_text, standard (price).
     """
     data = _extract_flight_data(page)
+    _check_layout(data)
     flights = []
     for j in data.get("journeys") or []:
         if j.get("isReturnTrip"):
