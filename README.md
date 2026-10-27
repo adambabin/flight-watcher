@@ -2,7 +2,7 @@
 
 Tracks Frontier **GoWild pass** seats on nonstop flights (ORD ⇄ IAH to start) and talks to you on Telegram:
 
-- **Midnight watch**: checks every couple of minutes from 11:50 PM to 12:15 AM Central, so it records when GoWild seats are actually released.
+- **Night watch**: checks every few minutes from 10:40 PM to 12:30 AM Central, plus hourly checks up to 3 days ahead, to record when GoWild seats are actually released.
 - **Release alerts**: `/alert` before bed and you get a ping the moment seats open (or a note that none did).
 - **6 AM report**: flights released overnight (flight number, times, seats left, when they opened) plus how today's flights are doing.
 - **History**: when each flight's GoWild seats opened, sold out, or reopened, kept as JSON on the `state` branch.
@@ -96,7 +96,7 @@ The repo is **public**, so GitHub Actions minutes are free and unlimited. Your s
 
 **The clock is the Cloudflare relay.** GitHub's own schedule turned out to delay runs by an hour or more and to drop many of them; on the night of Oct 25 it skipped the night watch and the 6 AM report. So the relay worker has two Cron Triggers, `5 * * * *` and `40 3,4 * * *` (UTC). Each posts `/tick` to the inbox issue, which starts a run within seconds. GitHub's cron stays on as a backup, and duplicate runs are harmless.
 
-**Late starts:** if a run still starts late If the night watch starts after the seats are already open, the history says "already open at first check" instead of guessing a release time.
+**Late starts:** if the night watch starts after the seats are already open, the history says "already open at first check" instead of guessing a release time.
 
 **Other time zones:** only Central-time nights are watched closely. A route departing from another time zone is still checked hourly. To catch its exact release, add a cron line for that zone's 10:40 PM.
 
