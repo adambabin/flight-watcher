@@ -1,5 +1,6 @@
 import html
 import json
+import os
 
 import pytest
 
@@ -88,3 +89,26 @@ def test_missing_journeys_or_legs_is_a_layout_change():
 
 def test_a_day_with_no_flights_is_not_a_layout_change():
     assert parse_select_page(page([]))["flights"] == []
+
+
+FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
+
+
+def test_real_select_page():
+    """A real page from Frontier. When the site changes, add the new page from the state
+    branch's debug/last_failure.html here and update the parser until this passes."""
+    with open(os.path.join(FIXTURES, "select_ORD-IAH_2026-10-27.html"), encoding="utf-8") as f:
+        r = parse_select_page(f.read())
+    assert r["out_of_range"] is False and r["lowest_gowild"] == 15.41
+    assert len(r["flights"]) == 6
+    [nonstop] = [x for x in r["flights"] if x["stops"] == 0]
+    assert nonstop == {"flight": "F9 3135", "dep": "2026-10-27T14:11:00", "arr": nonstop["arr"],
+                       "stops": 0, "gowild": True, "price": 15.41, "seats": None, "seats_text": None,
+                       "standard": nonstop["standard"]}
+    assert all(not x["gowild"] for x in r["flights"] if x["stops"])
+
+
+def test_every_saved_page_parses():
+    for name in sorted(os.listdir(FIXTURES)):
+        with open(os.path.join(FIXTURES, name), encoding="utf-8") as f:
+            assert any(x["stops"] == 0 for x in parse_select_page(f.read())["flights"]), name
