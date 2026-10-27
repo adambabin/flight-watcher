@@ -126,6 +126,11 @@ Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may co
   - The seats chart scrubs to the nearest check.
   - The table wraps on phones.
   - Test it at iPhone size with Playwright `devices['iPhone 13']`.
+- **#12 Release-time chart breaks when seats open days early** (Pending testing): https://app.notion.com/p/406f4a15b3ac814b83efe127ee3d52bc.
+  - The page now measures release as hours before the departure date's midnight (`hoursBefore`, `relDay` in `docs/index.html`): 24 h is the official release.
+  - The chart's y-axis is in days/hours.
+  - The tiles and the takeaway say "11:05 AM, 3 days before departure".
+  - `dashboard.json`'s "Release (min after midnight)" is no longer used by the page.
 - **#10 GitHub skipped scheduled runs: no 6 AM report or night watch** (Bug, Pending testing): https://app.notion.com/p/405f4a15b3ac8121a05de5011e205aa2. Fixed by the Cloudflare clock (PR #12). The user's Cloudflare steps are ticked and the first hourly trigger is verified. Still open: confirm a full night (the 10:40 PM watch and the ~6:05 AM report), then close it.
 
 ## Status (as of 2026-10-27)
