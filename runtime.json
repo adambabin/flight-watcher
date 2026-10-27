@@ -1,18 +1,5 @@
 {
- "alerts": [
-  {
-   "created": "2026-10-24T20:41:17Z",
-   "date": "2026-10-26",
-   "fired_at": "2026-10-25T04:18:59Z",
-   "id": 1,
-   "no_seats_noted": {},
-   "open_now": {
-    "IAH-ORD": false,
-    "ORD-IAH": false
-   },
-   "route": null
-  }
- ],
+ "alerts": [],
  "block_notified": null,
  "blocks": [],
  "digest_sent": "2026-10-26",
@@ -20,11 +7,11 @@
   "fail_streak": 0,
   "first_fail": null,
   "last_error": null,
-  "last_ok": "2026-10-27T05:32:42Z",
+  "last_ok": "2026-10-27T06:06:39Z",
   "notified": null,
   "sample_saved": "2026-10-27T01:17:30Z"
  },
- "last_check": "2026-10-27T05:32:42Z",
+ "last_check": "2026-10-27T06:06:39Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
