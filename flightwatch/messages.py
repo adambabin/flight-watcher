@@ -1,11 +1,12 @@
 """Telegram message text (HTML parse mode)."""
 from datetime import date, timedelta
 from html import escape
+from zoneinfo import ZoneInfo
 
 from . import rules
 from .airports import airport_tz
 from .frontier import search_url
-from .state import route_key
+from .state import HEALTH_ALERT_AFTER, route_key
 from .timeutil import clock, day_label, dep_clock, local_stamp, parse_clock
 from .tracker import flights_for, matching, release_estimate
 
@@ -106,7 +107,32 @@ def digest(state, today, recent_blocks=0):
     if recent_blocks:
         parts.append(f"⚠️ Frontier blocked {recent_blocks} check(s) in the last day, so some "
                      "times may be missing.")
+    h = state.runtime["health"]
+    if h["fail_streak"] >= HEALTH_ALERT_AFTER:
+        parts.append(f"⚠️ Frontier checks have been failing since {_since(h, ZoneInfo(state.settings["timezone"]), today)}, "
+                     "so the times above may be stale. Latest error: "
+                     f"<code>{escape(h['last_error'] or '?')}</code>")
     return "\n\n".join(parts)
+
+
+def _since(h, tz, ref_date):
+    return _stamp(h["first_fail"], tz, ref_date)
+
+
+def health_alert(h, now_local):
+    return "\n".join([
+        "⚠️ <b>Frontier checks are failing</b>",
+        f"The last {h['fail_streak']} checks failed, starting {_since(h, now_local.tzinfo, now_local.date())}. "
+        "Until this is fixed I can't see GoWild seats, so alerts won't fire.",
+        f"Latest error: <code>{escape(h['last_error'] or '?')}</code>",
+        "If Frontier changed its site, the parser needs an update. What Frontier sent is saved "
+        "on the state branch as <code>debug/last_failure.html</code>. GitHub marks this run as failed too.",
+    ])
+
+
+def health_ok(h, now_local):
+    return (f"✅ Frontier checks are working again (they had been failing since "
+            f"{_since(h, now_local.tzinfo, now_local.date())}). Tracking has resumed.")
 
 
 def alert_open(state, route, dep, recs):
@@ -142,6 +168,10 @@ def status(state, now_local):
     last = state.runtime.get("last_check")
     if last:
         lines.append(f"\nLast check: {local_stamp(last, now_local.tzinfo, now_local.date())}")
+    h = state.runtime["health"]
+    if h["fail_streak"]:
+        lines.append(f"⚠️ {h['fail_streak']} check(s) in a row failed, since "
+                     f"{_since(h, now_local.tzinfo, now_local.date())}: <code>{escape(h['last_error'] or '?')}</code>")
     return "\n".join(lines)
 
 

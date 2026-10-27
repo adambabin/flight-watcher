@@ -10,6 +10,7 @@ import os
 from datetime import date, datetime, timedelta
 
 from .airports import airport_tz
+from .state import HEALTH_ALERT_AFTER
 from .timeutil import clock, dep_clock, parse_iso
 
 CHECK_DAYS = 14   # departures whose every check is included (the seat-count chart)
@@ -106,6 +107,13 @@ def _check_rows(state_dir, flights, fallback_tz, keep_dates):
     return rows
 
 
+def _health(state, tz):
+    h = state.runtime["health"]
+    return {"failing": h["fail_streak"] >= HEALTH_ALERT_AFTER, "fail_streak": h["fail_streak"],
+            "failing_since": _stamp(_local(h["first_fail"], tz)), "last_error": h["last_error"],
+            "last_ok": _stamp(_local(h["last_ok"], tz))}
+
+
 def build(state, now):
     fallback = state.settings["timezone"]
     days = [_day_row(k, r, fallback, now) for k, r in sorted(state.flights.items())]
@@ -114,6 +122,7 @@ def build(state, now):
         "generated_at": now.astimezone(airport_tz("", fallback)).isoformat(timespec="seconds"),
         "days": {"columns": DAY_COLUMNS, "rows": days},
         "checks": {"columns": CHECK_COLUMNS, "rows": _check_rows(state.path, state.flights, fallback, set(keep))},
+        "health": _health(state, airport_tz("", fallback)),
     }
 
 

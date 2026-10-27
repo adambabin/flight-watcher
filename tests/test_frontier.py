@@ -1,5 +1,6 @@
 import html
 import json
+import os
 
 import pytest
 
@@ -55,3 +56,59 @@ def test_search_url():
     assert search_url("ORD", "IAH", date(2026, 10, 28)) == (
         "https://booking.flyfrontier.com/Flight/InternalSelect?o1=ORD&d1=IAH&dd1=Oct+28%2C+2026"
         "&ADT=1&mon=true&promo=")
+
+
+def _layout_error(p):
+    with pytest.raises(FrontierError) as e:
+        parse_select_page(p)
+    assert e.value.layout and not e.value.blocked
+    return str(e.value)
+
+
+def _blob(data):
+    return f"<script>var FlightData = '{html.escape(json.dumps(data))}';</script>"
+
+
+def test_redesigned_page_without_flight_data_is_a_layout_change():
+    _layout_error("<html><div id='new-react-app'></div></html>")
+
+
+def test_renamed_gowild_field_is_a_layout_change_not_no_seats():
+    f = flight("1234", "2026-10-28T06:05:00", "2026-10-28T08:42:00", gowild=True, seats=2)
+    f["goWildEnabled"] = f.pop("isGoWildFareEnabled")
+    assert "isGoWildFareEnabled" in _layout_error(page([f]))
+
+
+def test_missing_journeys_or_legs_is_a_layout_change():
+    _layout_error(_blob({"trips": [], "isGoWildOutOfRange": False}))
+    _layout_error(_blob({"journeys": [{"segments": []}]}))
+    f = flight("1234", "2026-10-28T06:05:00", "2026-10-28T08:42:00")
+    f["legs"] = [{"carrier": "F9", "number": "1234", "departs": "2026-10-28T06:05:00"}]
+    _layout_error(page([f]))
+
+
+def test_a_day_with_no_flights_is_not_a_layout_change():
+    assert parse_select_page(page([]))["flights"] == []
+
+
+FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
+
+
+def test_real_select_page():
+    """A real page from Frontier. When the site changes, add the new page from the state
+    branch's debug/last_failure.html here and update the parser until this passes."""
+    with open(os.path.join(FIXTURES, "select_ORD-IAH_2026-10-27.html"), encoding="utf-8") as f:
+        r = parse_select_page(f.read())
+    assert r["out_of_range"] is False and r["lowest_gowild"] == 15.41
+    assert len(r["flights"]) == 6
+    [nonstop] = [x for x in r["flights"] if x["stops"] == 0]
+    assert nonstop == {"flight": "F9 3135", "dep": "2026-10-27T14:11:00", "arr": nonstop["arr"],
+                       "stops": 0, "gowild": True, "price": 15.41, "seats": None, "seats_text": None,
+                       "standard": nonstop["standard"]}
+    assert all(not x["gowild"] for x in r["flights"] if x["stops"])
+
+
+def test_every_saved_page_parses():
+    for name in sorted(os.listdir(FIXTURES)):
+        with open(os.path.join(FIXTURES, name), encoding="utf-8") as f:
+            assert any(x["stops"] == 0 for x in parse_select_page(f.read())["flights"]), name

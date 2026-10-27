@@ -1,5 +1,7 @@
+import json
 from datetime import timedelta
 
+from flightwatch import messages
 from flightwatch.frontier import FrontierError
 from flightwatch.state import State
 
@@ -150,3 +152,64 @@ def test_tick_checks_three_days_out(state):
     app, fr, bot = make_app(state, clock, released_at_midnight)
     app.tick()
     assert sorted({c[2].isoformat() for c in fr.calls}) == ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29"]
+
+
+def _redesigned(origin, dest, dep, now):
+    return "<html><div id='new-site'></div></html>"
+
+
+def test_layout_change_alerts_once_a_day_saves_the_page_and_recovers(state):
+    clock = Clock(local(2026, 10, 26, 9, 5))
+    app, fr, bot = make_app(state, clock, _redesigned)
+    app.tick()
+    h = state.runtime["health"]
+    assert h["fail_streak"] == 8 and "layout changed" in h["last_error"]
+    alerts = [m for m in bot.sent if "Frontier checks are failing" in m]
+    assert len(alerts) == 1 and app.health_alerted
+    assert state.flights == {}
+    with open(state.path + "/debug/last_failure.html", encoding="utf-8") as f:
+        assert "new-site" in f.read()
+    with open(state.path + "/debug/last_failure.json", encoding="utf-8") as f:
+        assert json.load(f)["layout"] is True
+
+    # Still broken an hour later: no second ping the same day, and the run isn't failed again.
+    clock.t += timedelta(hours=1)
+    app2, _, bot2 = make_app(state, clock, _redesigned)
+    app2.tick()
+    assert not any("failing" in m for m in bot2.sent) and not app2.health_alerted
+    assert "Frontier checks have been failing" in messages.digest(state, app2.local_now().date())
+
+    # Fixed: one all-clear, the streak resets, and a good sample page is kept.
+    clock.t += timedelta(hours=1)
+    app3, _, bot3 = make_app(state, clock, released_at_midnight)
+    app3.tick()
+    assert sum("working again" in m for m in bot3.sent) == 1
+    assert h["fail_streak"] == 0 and h["notified"] is None and h["last_ok"]
+    with open(state.path + "/debug/sample_ok.html", encoding="utf-8") as f:
+        assert "FlightData" in f.read()
+
+
+def test_two_failures_then_success_stays_quiet(state):
+    clock = Clock(local(2026, 10, 26, 9, 5))
+    n = {"calls": 0}
+
+    def flaky(origin, dest, dep, now):
+        n["calls"] += 1
+        return _redesigned(origin, dest, dep, now) if n["calls"] % 3 else released_at_midnight(origin, dest, dep, now)
+
+    app, fr, bot = make_app(state, clock, flaky)
+    app.tick()
+    assert not any("failing" in m for m in bot.sent) and not app.health_alerted
+
+
+def test_empty_day_counts_as_a_failure_when_that_weekday_flew_last_week(state):
+    clock = Clock(local(2026, 10, 19, 9, 5))
+    app, _, _ = make_app(state, clock, released_at_midnight)
+    app.tick()   # records Oct 19-22
+    clock.t += timedelta(days=7)
+    app2, _, bot = make_app(state, clock, lambda *a: page([]))
+    app2.tick()
+    # Each route: today (Oct 26) doesn't count, since departed flights drop off; Oct 27-29
+    # flew a week earlier, so those 3 do.
+    assert state.runtime["health"]["fail_streak"] == 3
+    assert app2.health_alerted and any("no flights listed" in m for m in bot.sent)

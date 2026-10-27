@@ -33,6 +33,8 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 - That page embeds `FlightData = '<html-escaped JSON>'`. Each flight in `journeys[].flights[]` has `legs[]`, `isGoWildFareEnabled`, `goWildFare` and `goWildFareSeatsRemaining` ("2 Seats Left!"; missing means plenty). The top level has `isGoWildOutOfRange`.
 - Nonstop means `len(legs) == 1`.
 - The site uses DataDome: one `curl_cffi` Chrome-impersonating session, 4–7 s between requests. HTTP 403/405/406/429 or captcha means `blocked`.
+- **Layout checks** (`_check_layout`): if `journeys`/`flights`/`legs`, or `isGoWildFareEnabled`/`goWildFare` on every flight, are missing, or `FlightData` is gone without a captcha, it raises `FrontierError(layout=True)`. That way a redesign never gets recorded as "no GoWild seats".
+- `Frontier.last_page`/`last_url` keep the latest raw response for snapshots.
 - Verified working from GitHub Actions runners on 2026-10-24. At that point Frontier had one nonstop each way: F9 3135 ORD→IAH 7:40 AM, F9 1882 IAH→ORD 11:36 AM.
 
 **Run modes** (`runner.py` `App`), picked by local Central time in `pick_mode()`, because cron is in UTC and covers both DST offsets:
@@ -42,6 +44,11 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 - `commands`: started by a relayed Telegram message or the relay's `/tick` (see below). If it lands in the night window it does `night()` instead. GitHub keeps only one pending run per concurrency group, so a commands run can replace a queued night run, and this keeps the night watch from being lost.
 - All runs share concurrency group `flightwatch` (never parallel), so writes to the state branch never conflict.
 
+**Health** (`runner.py` `_check_ok`/`_check_failed`, `runtime.health`): every failed check that isn't a bot block counts toward `fail_streak`. That includes layout errors, HTTP 5xx/404, network errors, and an empty result for a future date when the same weekday had flights a week earlier. Any good check resets it.
+- At `HEALTH_ALERT_AFTER` (3) in a row, it sends a Telegram alert (at most once a day) and `__main__` exits 1, so the GitHub run goes red and GitHub emails the owner. Recovery sends one "working again" message.
+- The digest, `/status` and the dashboard banner (`dashboard.json` `health`) show it while it's failing.
+- Every failure writes `.state/debug/last_failure.html` plus `last_failure.json` (error, URL, time). A good page with nonstops is kept weekly as `debug/sample_ok.html`. Fixing a redesign means taking those from the `state` branch, dropping the new page into `tests/fixtures/`, and updating the parser until `test_frontier` passes.
+
 **History** (`tracker.record`): turns each poll into per-flight records keyed `"YYYY-MM-DD|ORD-IAH|F9 1234"`.
 - Every transition time (`opened_at`, `sold_out_at`) is stored with the previous check's time (`opened_prev`, `sold_out_prev`), so messages say "opened between X and Y". `opened_prev = None` means it was already open at the first check.
 - Per route and date, `days.json` tracks the `isGoWildOutOfRange` true→false transition as a second release signal.
@@ -50,6 +57,7 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 - `settings.json` holds routes (`notify`, `depart_after`/`depart_before` "HH:MM"), the timezone, the digest and `nightly_alert`. These are changed only through bot commands.
 - `runtime.json` holds alerts, the Telegram offset, `digest_sent` and the block log.
 - `flights.json`, `days.json` and `observations/YYYY-MM.jsonl` hold the history (observations are raw and append-only).
+- `debug/` holds raw Frontier pages: the latest failure and a weekly good sample.
 
 **Commands** (`commands.py`): `handle(state, text, now_local)` mutates state and returns HTML reply text. `/now` is special-cased in `App._answer`, because it needs Frontier.
 - Dates in `/alert` mean **travel** dates. The default is `next_release_date()` (the coming midnight's date + 1, with a 2-hour grace after midnight).
@@ -97,7 +105,7 @@ When the user says "ticket N", they mean the `ID` property (auto-increment).
 Page templates: "Basic", "Mock options".
 
 Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may contain secrets, so never copy their contents into the repo. As of 2026-10-25:
-- **#5** Check for site updates that would break this (Backlog)
+- **#5** Check for site updates that would break this. Built: layout checks, the 3-strike Telegram + red-run alert, failure snapshots and a real-page parser test. A weekly field-drift warning was deferred.
 - **#6** Add the updates to a dashboard (User feedback): view each flight's activity over time, e.g. filter to IAH→ORD 11:36 AM and see what time GoWild seats appear each night and when they sell out, day over day and week over week.
   - Dashboard home: **Google Sheets**. Notion was tried first, but its free plan shows only one chart.
   - The mockup is "GoWild Dashboard (SAMPLE mockup)" in the user's Drive: https://docs.google.com/spreadsheets/d/1bWLkpPrWtrwbJJM5HzPuEezgR1D58-ygOzn4gI5-WGk. Edit it with the Google Sheets MCP tools.

@@ -39,6 +39,10 @@ def main(argv=None):
     finally:
         state.save()
         dashboard.write(state, app.local_now())
+    if app.health_alerted:
+        # A red run makes GitHub email the owner too (once a day, like the Telegram alert).
+        print(f"::error::Frontier checks are failing: {state.runtime['health']['last_error']}", flush=True)
+        return 1
     return 0
 
 
