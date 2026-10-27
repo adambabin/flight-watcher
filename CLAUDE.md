@@ -111,20 +111,35 @@ Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may co
 - **Interactive flight-history dashboard (live data)** (In progress): https://app.notion.com/p/405f4a15b3ac810ba97de1434c47c91b. The user tracks requests and progress for the dashboard here, so update it as work lands.
   - The real dashboard is the GitHub Pages site `docs/index.html`, at https://adambabin.github.io/flight-watcher/ once Pages is enabled.
   - There's also a claude.ai prototype of the same design, the "Dashboard"-type artifact https://claude.ai/artifact/MhXfXxwBTdroGj5ydFASnE. It reads the sample Google Sheet through the viewer's Google Sheets connector.
-- **GoWild seats opened before midnight: widen the night watch** (Bug): https://app.notion.com/p/405f4a15b3ac818e96c3d68854b3b0db. The fix shipped with the 10:40 PM night watch and evening day+2 checks. Confirm the real release time after a week of data.
+- **GoWild seats opened before midnight: widen the night watch** (Bug, Pending testing): https://app.notion.com/p/405f4a15b3ac818e96c3d68854b3b0db. The fix shipped with the 10:40 PM night watch and the hourly 3-day lookahead (PR #11). Confirm the real release time after a week of data.
+- **#10 GitHub skipped scheduled runs: no 6 AM report or night watch** (Bug, Pending testing): https://app.notion.com/p/405f4a15b3ac8121a05de5011e205aa2. Fixed by the Cloudflare clock (PR #12). The user's Cloudflare steps are ticked and the first hourly trigger is verified. Still open: confirm a full night (the 10:40 PM watch and the ~6:05 AM report), then close it.
 
-## Status (as of 2026-10-26)
+## Status (as of 2026-10-27)
 
 Done and live on `main`:
 - The tracker (PR #1) and the relay support (PR #3).
+- Owner-only inbox commands (PR #9), the 10:40 PM night watch and Pages dashboard (PR #10), the hourly 3-day lookahead (PR #11), and the Cloudflare clock (PR #12).
 - Secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are set, and the bot works: the setup check, commands and `/status` were all answered.
 - The user armed `/alert` for Mon Oct 26 flights.
 
 - The relay is live (2026-10-26): Cloudflare Worker `gowild-relay` with secrets `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `GITHUB_TOKEN`, webhook set via `/setup`, and `/status` sent from Telegram got a fast reply.
   - `GITHUB_TOKEN` is the fine-grained PAT `gowild-relay` (only `flight-watcher`, Issues: Read and write). It **expires Thu, Oct 14 2027**. Before then, regenerate it on GitHub and replace the worker secret, or the relay stops forwarding and replies fall back to scheduled runs.
   - The PAT's "Generate token" confirmation looks like it does nothing (mobile and desktop) but the token does get created. Its value is shown only once, so if it's lost, use "Regenerate token".
+- The Cloudflare clock is live (2026-10-26): the user deployed the new `relay/worker.js` and added Cron Triggers `5 * * * *` and `40 3,4 * * *`.
+  - Verified: the 01:05 UTC trigger started issue_comment run 40430493952 about 39 s later, and it did a full `/tick`: 8 checks over Oct 27–29, both directions.
+  - Not yet verified: a full night (the 10:40 PM watch and the 6 AM report from the Cloudflare triggers).
+  - To check: list the workflow runs. Cloudflare runs show `event: issue_comment` at about :05 past each hour, and GitHub cron runs show `schedule`.
+- GitHub Pages is on and serves `docs/` from `main`.
+
+Next steps:
+1. Confirm the first full night on the Cloudflare clock, then close ticket #10.
+2. After a few days of 3-day-lookahead data, find when GoWild seats really open, using `flights.json` `opened_prev`/`opened_at` or the dashboard. Then move the night watch (`NIGHT_START`, `HOT_ZONES`, the `40 3,4` triggers) and the `/alert` default date (`next_release_date`) to that time. Early data:
+   - Mon Oct 26 ORD→IAH was open by 11:18 PM Sat.
+   - Both Tue Oct 27 flights were open by 9:54 PM Sun.
+   - Thu Oct 29 ORD→IAH opened between 4:20 and 7:52 AM Mon, about 3 days out.
+   - Wed Oct 28 IAH→ORD F9 3136 reopened on the evening of Oct 26.
+3. Once the Pages dashboard has real data, delete the sample Google Sheet, the Notion SAMPLE mockups and the claude.ai mockup artifact.
 
 Ideas raised but not done:
-- **Public repo**: unlimited minutes would allow hourly checks and a longer night window. The tradeoff is that the state branch becomes public.
 - **Cron for other time zones**: only Central midnights are watched closely, so routes from other zones need their own 11:50 PM cron line.
 - **Action versions**: `actions/checkout@v4` and `setup-python@v5` trigger a Node 20 deprecation warning. Bumping them is harmless.
