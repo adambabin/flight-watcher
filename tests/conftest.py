@@ -48,10 +48,14 @@ class FakeFrontier:
         self.respond = respond
         self.calls = []
         self.resets = 0
+        self.last_url = self.last_page = None
 
     def search(self, origin, dest, dep):
         self.calls.append((origin, dest, dep, self.clock.now()))
-        return parse_select_page(self.respond(origin, dest, dep, self.clock.now()))
+        self.last_url = f"{origin}-{dest} {dep}"
+        self.last_page = None
+        self.last_page = self.respond(origin, dest, dep, self.clock.now())
+        return parse_select_page(self.last_page)
 
     def reset(self):
         self.resets += 1

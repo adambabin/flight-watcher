@@ -7,6 +7,7 @@ night: started at 10:40 PM; checks the date that's about to open every few minut
        until 12:30 AM, every 2 minutes around midnight Eastern and midnight local, so we
        see the exact release and can ping right away.
 """
+import json
 import time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -14,7 +15,7 @@ from zoneinfo import ZoneInfo
 from . import commands, messages, rules, tracker
 from .airports import airport_tz
 from .frontier import FrontierError
-from .state import route_key
+from .state import HEALTH_ALERT_AFTER, route_key
 from .timeutil import iso, parse_clock, parse_iso
 
 NIGHT_START = (22, 30)          # local time from which a run counts as the night watch
@@ -26,6 +27,8 @@ HOT_ZONES = ("America/New_York",)   # midnights besides the local one where seat
 LOOKAHEAD_DAYS = 3              # ticks check today through this many days ahead
 NIGHT_MAX_BLOCKS = 3
 DIGEST_LATE_LIMIT = timedelta(hours=6)
+SAMPLE_EVERY = timedelta(days=7)    # how often to keep a good Frontier page, for parser tests
+SNAPSHOT_LIMIT = 3_000_000          # characters of a raw page worth keeping
 
 
 class Blocked(Exception):
@@ -41,6 +44,7 @@ class App:
         self._now = now_fn or (lambda: datetime.now(timezone.utc))
         self.sleep = sleep
         self.log = log
+        self.health_alerted = False   # this run told the user checks are failing; __main__ exits 1
 
     # ------------------------------------------------------------ basics
 
@@ -128,7 +132,14 @@ class App:
             if e.blocked:
                 self._note_block()
                 raise Blocked(str(e)) from None
+            self._check_failed(route, dep, e)
             return
+        if not result["flights"] and self._expected_flights(route, dep):
+            self.log(f"{route_key(route)} {dep}: no flights listed")
+            self._check_failed(route, dep, FrontierError(
+                "no flights listed, though the same weekday had flights last week", layout=True))
+            return
+        self._check_ok(result)
         now = self._now()
         events = tracker.record(self.state, route, dep, result, now, mode)
         self.state.runtime["last_check"] = iso(now)
@@ -147,6 +158,54 @@ class App:
             self.notify("⚠️ Frontier's bot protection refused a check. I'll keep trying on the "
                         "normal schedule. If this happens every day, GitHub's servers are probably "
                         "blocked; see the README for running the tracker from home instead.")
+
+    # ------------------------------------------------------------ health
+
+    def _expected_flights(self, route, dep):
+        """An empty result is suspicious when the route flew that weekday a week earlier.
+        Today is left out: flights that already left drop off the page."""
+        if dep <= self.route_today(route):
+            return False
+        return bool(tracker.flights_for(self.state, route_key(route), dep - timedelta(days=7)))
+
+    def _check_ok(self, result):
+        h = self.state.runtime["health"]
+        now = self._now()
+        if h["notified"]:
+            self.notify(messages.health_ok(h, self.local_now()))
+        h.update(fail_streak=0, first_fail=None, last_error=None, notified=None, last_ok=iso(now))
+        page = getattr(self.frontier, "last_page", None)
+        due = not h["sample_saved"] or now - parse_iso(h["sample_saved"]) >= SAMPLE_EVERY
+        if page and due and any(f["stops"] == 0 for f in result["flights"]):
+            self.state.write_debug("sample_ok.html", page[:SNAPSHOT_LIMIT])
+            self.state.write_debug("sample_ok.json", json.dumps(
+                {"at": iso(now), "url": getattr(self.frontier, "last_url", None)}, indent=1) + "\n")
+            h["sample_saved"] = iso(now)
+
+    def _check_failed(self, route, dep, err):
+        """A check failed for a reason other than a bot block. Keep what Frontier sent, and
+        after HEALTH_ALERT_AFTER in a row, tell the user (once a day) and fail the run."""
+        h = self.state.runtime["health"]
+        now = self._now()
+        h["fail_streak"] += 1
+        h["first_fail"] = h["first_fail"] or iso(now)
+        h["last_error"] = f"{route_key(route)} {dep}: {err}"
+        self._save_failure(route, dep, err)
+        today = self.local_now().date().isoformat()
+        if h["fail_streak"] >= HEALTH_ALERT_AFTER and h["notified"] != today:
+            h["notified"] = today
+            self.health_alerted = True
+            self.notify(messages.health_alert(h, self.local_now()))
+
+    def _save_failure(self, route, dep, err):
+        page = getattr(self.frontier, "last_page", None)
+        self.state.write_debug("last_failure.json", json.dumps({
+            "at": iso(self._now()), "route": route_key(route), "date": dep.isoformat(),
+            "error": str(err), "status": err.status, "layout": err.layout,
+            "url": getattr(self.frontier, "last_url", None), "page_saved": bool(page),
+        }, indent=1) + "\n")
+        if page:
+            self.state.write_debug("last_failure.html", page[:SNAPSHOT_LIMIT])
 
     def recent_blocks(self):
         cutoff = self._now() - timedelta(hours=24)
@@ -311,7 +370,10 @@ class App:
                 result = self.frontier.search(route["origin"], route["dest"], dep)
             except FrontierError as e:
                 lines.append(f"❌ {messages.arrow(rkey)}: {e}")
+                if not e.blocked:
+                    self._save_failure(route, dep, e)
                 continue
+            self._check_ok(result)
             tracker.record(self.state, route, dep, result, self._now(), "check")
             nonstop = [f for f in result["flights"] if f["stops"] == 0]
             lines.append(f"✅ {messages.arrow(rkey)} {dep}: {len(result['flights'])} itineraries, "

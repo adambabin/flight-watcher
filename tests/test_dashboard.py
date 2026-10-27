@@ -26,3 +26,12 @@ def test_dashboard_export_after_a_night(state):
     mine = [c for c in checks if c["Flight"].startswith("F9 1234")]
     assert mine[0]["Checked at"] == "2026-10-26 23:50" and mine[0]["GoWild open"] is False
     assert any(c["GoWild open"] and c["Seats left"] == 2 and 0 <= c["Hours after midnight"] < 0.1 for c in mine)
+
+
+def test_dashboard_reports_failing_checks(state):
+    clock = Clock(local(2026, 10, 26, 9, 5))
+    app, _, _ = make_app(state, clock, lambda *a: "<html>new site</html>")
+    app.tick()
+    out = dashboard.build(state, app.local_now())
+    assert out["health"]["failing"] and out["health"]["failing_since"] == "2026-10-26 09:05"
+    assert "layout changed" in out["health"]["last_error"]

@@ -8,6 +8,7 @@ after every run, so the history is browsable on GitHub.
   flights.json             one record per (date, route, flight): when GoWild opened, sold out...
   days.json                one record per (date, route): first/last check, when the window opened
   observations/YYYY-MM.jsonl  every check, raw, append-only
+  debug/                   Frontier's raw page from the latest failure, and a weekly good sample
 """
 import copy
 import json
@@ -23,6 +24,8 @@ DEFAULT_SETTINGS = {
     "nightly_alert": False,
 }
 
+HEALTH_ALERT_AFTER = 3   # failed checks in a row (bot blocks aside) before telling the user
+
 DEFAULT_RUNTIME = {
     "telegram_offset": 0,
     "digest_sent": None,
@@ -31,6 +34,9 @@ DEFAULT_RUNTIME = {
     "block_notified": None,
     "last_check": None,
     "next_alert_id": 1,
+    # Checks that fail for reasons other than a bot block (layout change, outage), in a row.
+    "health": {"fail_streak": 0, "first_fail": None, "last_error": None, "last_ok": None,
+               "notified": None, "sample_saved": None},
 }
 
 
@@ -76,6 +82,13 @@ class State:
             with open(full, "a", encoding="utf-8") as f:
                 f.write(json.dumps(obs, sort_keys=True) + "\n")
         self._observations = []
+
+    def write_debug(self, name, text):
+        """Save a raw Frontier page (or its notes) under debug/, right away."""
+        full = os.path.join(self.path, "debug", name)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        with open(full, "w", encoding="utf-8") as f:
+            f.write(text)
 
     def log_observation(self, obs):
         self._observations.append(obs)
