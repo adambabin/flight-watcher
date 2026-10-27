@@ -120,6 +120,12 @@ Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may co
   - The real dashboard is the GitHub Pages site `docs/index.html`, at https://adambabin.github.io/flight-watcher/ once Pages is enabled.
   - There's also a claude.ai prototype of the same design, the "Dashboard"-type artifact https://claude.ai/artifact/MhXfXxwBTdroGj5ydFASnE. It reads the sample Google Sheet through the viewer's Google Sheets connector.
 - **GoWild seats opened before midnight: widen the night watch** (Bug, Pending testing): https://app.notion.com/p/405f4a15b3ac818e96c3d68854b3b0db. The fix shipped with the 10:40 PM night watch and the hourly 3-day lookahead (PR #11). Confirm the real release time after a week of data.
+- **#11 Make the dashboard mobile friendly** (Pending testing): https://app.notion.com/p/406f4a15b3ac804d8c99deda0aa4348f.
+  - Done in PR #15: under 40rem, the flight chips become one sticky `<select>` grouped by route.
+  - Tooltips pin on tap (`tips()` with `pinned` state that survives redraws) and clear when tapping elsewhere.
+  - The seats chart scrubs to the nearest check.
+  - The table wraps on phones.
+  - Test it at iPhone size with Playwright `devices['iPhone 13']`.
 - **#10 GitHub skipped scheduled runs: no 6 AM report or night watch** (Bug, Pending testing): https://app.notion.com/p/405f4a15b3ac8121a05de5011e205aa2. Fixed by the Cloudflare clock (PR #12). The user's Cloudflare steps are ticked and the first hourly trigger is verified. Still open: confirm a full night (the 10:40 PM watch and the ~6:05 AM report), then close it.
 
 ## Status (as of 2026-10-27)

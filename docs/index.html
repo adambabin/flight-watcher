@@ -34,7 +34,9 @@ h1 { font: 400 clamp(2rem, 6vw, 2.75rem)/1.05 var(--serif); margin: 0; text-wrap
 .take { color: var(--muted); margin: 6px 0 0; max-width: 68ch; }
 .take b { color: var(--fg); font-weight: 600; }
 .meta { color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
-.picker { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+.picker { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; }
+.picker .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.flight-select { display: none; width: 100%; font-size: 16px; padding: 10px 12px; border-radius: var(--radius); background: var(--panel); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
 button { font: inherit; color: inherit; }
 .chip { text-align: left; cursor: pointer; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel); color: var(--muted); min-width: 0; }
@@ -55,7 +57,8 @@ button { font: inherit; color: inherit; }
 .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 select { font: inherit; font-size: 13px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
 .chart { position: relative; min-height: 220px; margin-top: 10px; }
-.chart svg { display: block; overflow: visible; }
+.chart svg { display: block; overflow: visible; -webkit-tap-highlight-color: transparent; }
+.chart .scrub { touch-action: pan-y; }
 .chart text { fill: var(--muted); font: 12px var(--sans); }
 .chart .tick line { stroke: var(--line); }
 .chart .domain { stroke: var(--soft); }
@@ -76,7 +79,19 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
 .err { color: var(--bad); }
 .alert { border: 1px solid var(--bad); color: var(--bad); background: var(--panel); border-radius: var(--radius); padding: 10px 14px; overflow-wrap: anywhere; }
 .alert code { font-size: 12px; color: var(--fg); }
-@media (max-width: 30rem) { .hide-narrow { display: none; } }
+/* Phones: one dropdown instead of a wall of flight chips; 16px controls so iOS doesn't zoom on focus. */
+@media (max-width: 40rem) {
+  .picker .chips { display: none; }
+  .flight-select { display: block; }
+  select { font-size: 16px; }
+}
+@media (max-width: 30rem) {
+  .hide-narrow { display: none; }
+  table { font-size: 12px; }
+  th, td { padding: 6px 4px; }
+  th, td { white-space: normal; }
+  .pill { border-radius: 8px; padding: 1px 6px; }
+}
 @media (prefers-reduced-motion: no-preference) { .first .chart svg { animation: fade .35s ease-out; } @keyframes fade { from { opacity: 0; } } }
 #chart-windows { min-height: 90px; }
 </style>
@@ -118,7 +133,7 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
     </section>
     <section class="card wide">
       <h2>Seats left through one departure</h2>
-      <p class="note">Every check, by hours after the release-night midnight. "Open" means seats were available but Frontier didn't show a count.</p>
+      <p class="note">Every check, by hours after the release-night midnight. "Open" means seats were available but Frontier didn't show a count. Tap or drag across the chart to read each check.</p>
       <div class="bar"><label class="note" for="seat-day">Departure</label><select id="seat-day"></select></div>
       <div class="chart" id="chart-seats"></div>
     </section>
@@ -172,24 +187,69 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
       hide() { tip.hidden = true; },
     };
   }
+  // Mouse: tooltips follow hover. Touch: a tap pins the tooltip to the mark until you tap somewhere else.
+  // `pinned` survives redraws (a tap usually also selects that departure, which redraws the page).
+  let pinned = null, lastPointer = 'mouse';
+  document.addEventListener('pointerdown', (e) => {
+    lastPointer = e.pointerType || 'mouse';
+    const hit = e.target.closest && e.target.closest('.hit'), chart = hit && hit.closest('.chart');
+    if (!hit) pinned = null;
+    document.querySelectorAll('.chart').forEach((c) => { if (c !== chart) { c.querySelectorAll('.tip').forEach((t) => { t.hidden = true; }); d3.select(c).selectAll('.ring').attr('visibility', 'hidden'); } });
+  }, true);
+  function tips(el, name, sel, o) {
+    const tip = tipFor(el);
+    const show = (d, x, y) => tip.show(x, y, ...o.content(d));
+    sel.classed('hit', true)
+      .on('pointerenter pointermove', (ev, d) => { if (ev.pointerType === 'mouse') show(d, ...d3.pointer(ev, el)); })
+      .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse' && !pinned) tip.hide(); })
+      .on('click', (ev, d) => {
+        if (lastPointer !== 'mouse') { pinned = { name, key: o.key(d) }; show(d, ...o.anchor(d)); }
+        if (o.select) o.select(d);
+      });
+    if (pinned && pinned.name === name) {
+      const d = sel.data().find((v) => o.key(v) === pinned.key);
+      if (d) show(d, ...o.anchor(d));
+    }
+  }
   const empty = (el, text) => { el.replaceChildren(); const m = document.createElement('div'); m.className = 'msg'; m.textContent = text; el.append(m); };
   const svgIn = (el, W, H, label) => d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', label);
   const tidy = (g) => g.attr('font-size', null).attr('font-family', null);
 
-  function flightsList() { return [...new Set(days.map((r) => r.Flight))].sort(); }
+  // Labels look like "F9 1882 · IAH → ORD · 11:36 AM → 2:25 PM". Order by route, then departure time.
+  const parts = (f) => { const [no, route = '', times = ''] = f.split(' · '); return { no, route, times }; };
+  const depMin = (times) => { const m = /(\d+):(\d+) (AM|PM)/.exec(times); return m ? (m[1] % 12) * 60 + +m[2] + (m[3] === 'PM' ? 720 : 0) : 0; };
+  function flightsList() {
+    return [...new Set(days.map((r) => r.Flight))].sort((a, b) => {
+      const p = parts(a), q = parts(b);
+      return p.route.localeCompare(q.route) || depMin(p.times) - depMin(q.times) || a.localeCompare(b);
+    });
+  }
   function currentFlight() { const all = flightsList(); return all.includes(ui.flight) ? ui.flight : all[0]; }
   function rowsFor(flight) { return days.filter((r) => r.Flight === flight && (!ui.weekday || r.Weekday === ui.weekday)); }
 
   function drawPicker(flight) {
-    $('#flights').replaceChildren(...flightsList().map((f) => {
-      const [no, ...rest] = f.split(' · ');
+    const choose = (f) => { ui.flight = f; ui.weekday = null; ui.day = null; pinned = null; store.set('gw-flight', f); draw(); };
+    const all = flightsList();
+    const chips = document.createElement('div'); chips.className = 'chips';
+    chips.append(...all.map((f) => {
+      const { no, route, times } = parts(f);
       const b = document.createElement('button'); b.className = 'chip'; b.setAttribute('aria-pressed', String(f === flight));
       const a = document.createElement('span'); a.className = 'no'; a.textContent = no;
-      const c = document.createElement('span'); c.className = 'rt'; c.textContent = rest.join(' · ');
+      const c = document.createElement('span'); c.className = 'rt'; c.textContent = [route, times].filter(Boolean).join(' · ');
       b.append(a, c);
-      b.addEventListener('click', () => { ui.flight = f; ui.weekday = null; ui.day = null; store.set('gw-flight', f); draw(); });
+      b.addEventListener('click', () => choose(f));
       return b;
     }));
+    // Phones get a native dropdown, grouped by route.
+    const sel = document.createElement('select'); sel.className = 'flight-select'; sel.setAttribute('aria-label', 'Flight');
+    d3.groups(all, (f) => parts(f).route).forEach(([route, fs]) => {
+      const g = document.createElement('optgroup'); g.label = route || 'Other';
+      g.append(...fs.map((f) => new Option(`${parts(f).times || f} · ${parts(f).no}`, f)));
+      sel.append(g);
+    });
+    sel.value = flight;
+    sel.addEventListener('change', () => choose(sel.value));
+    $('#flights').replaceChildren(chips, sel);
   }
 
   function drawSummary(flight) {
@@ -231,7 +291,7 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
       if (start != null && end == null) end = Math.min(dep ?? 48, (now - (dayDate(r.Date) - 864e5)) / 36e5);
       return { r, start, end, dep };
     });
-    const W = el.clientWidth || 600, rowH = 24, M = { t: 8, r: 12, b: 28, l: 88 };
+    const W = el.clientWidth || 600, rowH = W < 480 ? 32 : 24, M = { t: 8, r: 12, b: 28, l: 88 };
     const H = M.t + M.b + rowH * items.length;
     const lo = Math.min(-2, d3.min(items, (d) => d.start ?? 0) - 0.5);
     const hi = Math.max(26, d3.max(items, (d) => Math.max(d.end ?? 0, d.dep ?? 0)) + 0.5);
@@ -245,21 +305,20 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
     svg.append('g').selectAll('text').data(items).join('text').attr('x', M.l - 8).attr('y', (d) => y(d.r.Date) + y.bandwidth() / 2).attr('dy', '0.32em').attr('text-anchor', 'end').text((d) => fmtDay(dayDate(d.r.Date)));
     svg.append('g').selectAll('line').data(items.filter((d) => d.dep != null)).join('line')
       .attr('x1', (d) => x(d.dep)).attr('x2', (d) => x(d.dep)).attr('y1', (d) => y(d.r.Date) - 2).attr('y2', (d) => y(d.r.Date) + y.bandwidth() + 2).attr('stroke', 'var(--muted)').attr('stroke-width', 2);
-    const tip = tipFor(el);
-    svg.append('g').selectAll('rect').data(items.filter((d) => d.start != null)).join('rect')
-      .attr('x', (d) => x(d.start)).attr('y', (d) => y(d.r.Date)).attr('height', y.bandwidth()).attr('width', (d) => Math.max(3, x(d.end) - x(d.start))).attr('rx', 4)
+    const bars = svg.append('g').selectAll('rect').data(items.filter((d) => d.start != null)).join('rect')
+      .attr('x', (d) => x(d.start)).attr('y', (d) => y(d.r.Date)).attr('height', y.bandwidth()).attr('width', (d) => Math.max(6, x(d.end) - x(d.start))).attr('rx', 4)
       .attr('fill', (d) => (ui.day && ui.day !== d.r.Date ? 'var(--soft)' : d.r.Outcome.startsWith('Open') ? 'var(--accent-2)' : 'var(--accent)'))
-      .style('cursor', 'pointer')
-      .on('pointerenter pointermove', (ev, d) => {
-        const [mx, my] = d3.pointer(ev, el);
-        tip.show(mx, my, fmtDay(dayDate(d.r.Date)) + ' departure', [
-          `${d.r['Release known'] ? 'Opened' : 'Already open at first check'} ${when(d.r['Released at'])}`,
-          d.r['Sold out at'] ? `Sold out by ${when(d.r['Sold out at'])}` : d.r.Outcome,
-          `${d.r['Hours open']} h open${d.r['Max seats seen'] != null ? ` · up to ${d.r['Max seats seen']} seats` : ''}${d.r.Reopened ? ` · reopened ${d.r.Reopened}×` : ''}`,
-        ]);
-      })
-      .on('pointerleave', () => tip.hide())
-      .on('click', (ev, d) => { ui.day = d.r.Date; draw(); });
+      .style('cursor', 'pointer');
+    tips(el, 'windows', bars, {
+      key: (d) => d.r.Date,
+      anchor: (d) => [(x(d.start) + Math.max(6, x(d.end) - x(d.start)) / 2), y(d.r.Date)],
+      content: (d) => [fmtDay(dayDate(d.r.Date)) + ' departure', [
+        `${d.r['Release known'] ? 'Opened' : 'Already open at first check'} ${when(d.r['Released at'])}`,
+        d.r['Sold out at'] ? `Sold out by ${when(d.r['Sold out at'])}` : d.r.Outcome,
+        `${d.r['Hours open']} h open${d.r['Max seats seen'] != null ? ` · up to ${d.r['Max seats seen']} seats` : ''}${d.r.Reopened ? ` · reopened ${d.r.Reopened}×` : ''}`,
+      ]],
+      select: (d) => { ui.day = d.r.Date; draw(); },
+    });
     svg.append('g').selectAll('text').data(items.filter((d) => d.start == null)).join('text')
       .attr('x', x(0) + 6).attr('y', (d) => y(d.r.Date) + y.bandwidth() / 2).attr('dy', '0.32em').text((d) => (d.r.Outcome === 'Not open yet' ? 'Not open yet' : 'No GoWild seats'));
   }
@@ -282,12 +341,16 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
     svg.append('text').attr('x', W - M.r).attr('y', y(-60) - 4).attr('text-anchor', 'end').text('midnight Eastern');
     const known = data.filter((d) => d.known);
     if (known.length > 1) svg.append('path').datum(known).attr('fill', 'none').attr('stroke', 'var(--accent)').attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', d3.line((d) => x(d.d), (d) => y(d.m)));
-    const tip = tipFor(el);
     svg.append('g').selectAll('circle').data(data).join('circle').attr('cx', (d) => x(d.d)).attr('cy', (d) => y(d.m)).attr('r', 4.5)
-      .attr('fill', (d) => (d.known ? 'var(--accent)' : 'var(--panel)')).attr('stroke', 'var(--accent)').attr('stroke-width', 2).style('cursor', 'pointer')
-      .on('pointerenter pointermove', (ev, d) => { const [mx, my] = d3.pointer(ev, el); tip.show(mx, my, fmtDay(d.d) + ' departure', [d.known ? `Seats appeared at ${when(d.r['Released at'])}` : `Already open at first check, ${when(d.r['Released at'])}`]); })
-      .on('pointerleave', () => tip.hide())
-      .on('click', (ev, d) => { ui.day = d.r.Date; draw(); });
+      .attr('fill', (d) => (d.known ? 'var(--accent)' : 'var(--panel)')).attr('stroke', 'var(--accent)').attr('stroke-width', 2).attr('pointer-events', 'none');
+    const hits = svg.append('g').selectAll('circle').data(data).join('circle').attr('cx', (d) => x(d.d)).attr('cy', (d) => y(d.m)).attr('r', 16)
+      .attr('fill', 'transparent').style('cursor', 'pointer');
+    tips(el, 'release', hits, {
+      key: (d) => d.r.Date,
+      anchor: (d) => [x(d.d), y(d.m) - 6],
+      content: (d) => [fmtDay(d.d) + ' departure', [d.known ? `Seats appeared at ${when(d.r['Released at'])}` : `Already open at first check, ${when(d.r['Released at'])}`]],
+      select: (d) => { ui.day = d.r.Date; draw(); },
+    });
   }
 
   function drawWeekday(flight) {
@@ -339,14 +402,25 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
     svg.append('g').attr('transform', `translate(${M.l},0)`).call(d3.axisLeft(y).tickValues(d3.range(0, top + 1)).tickFormat((v) => (v === top ? 'open' : v)).tickSize(-(W - M.l - M.r))).call(tidy).call((g) => g.select('.domain').remove());
     svg.append('path').datum(data).attr('fill', 'var(--accent-2)').attr('fill-opacity', 0.12).attr('d', d3.area((d) => x(d['Hours after midnight']), y(0), (d) => y(val(d))).curve(d3.curveStepAfter));
     svg.append('path').datum(data).attr('fill', 'none').attr('stroke', 'var(--accent-2)').attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('d', d3.line((d) => x(d['Hours after midnight']), (d) => y(val(d))).curve(d3.curveStepAfter));
+    svg.append('g').selectAll('circle').data(data).join('circle').attr('cx', (d) => x(d['Hours after midnight'])).attr('cy', (d) => y(val(d))).attr('r', 3.5).attr('fill', 'var(--accent-2)').attr('pointer-events', 'none');
+    // The whole plot is the target: hover, tap or drag picks the nearest check.
     const tip = tipFor(el);
-    svg.append('g').selectAll('circle').data(data).join('circle').attr('cx', (d) => x(d['Hours after midnight'])).attr('cy', (d) => y(val(d))).attr('r', 3.5).attr('fill', 'var(--accent-2)')
-      .on('pointerenter pointermove', (ev, d) => {
-        const [mx, my] = d3.pointer(ev, el);
-        const s = d['Seats left'];
-        tip.show(mx, my, when(d['Checked at']), [!d['GoWild open'] ? 'No GoWild seats' : s == null ? "Open (Frontier didn't show a count)" : `${s} GoWild seat${s === 1 ? '' : 's'} left`]);
+    const ring = svg.append('circle').attr('class', 'ring').attr('r', 6).attr('fill', 'none').attr('stroke', 'var(--accent-2)').attr('stroke-width', 2).attr('pointer-events', 'none').attr('visibility', 'hidden');
+    const nearest = (px) => { const h = x.invert(px); return data.reduce((a, b) => (Math.abs(b['Hours after midnight'] - h) < Math.abs(a['Hours after midnight'] - h) ? b : a)); };
+    const point = (d) => {
+      const cx = x(d['Hours after midnight']), cy = y(val(d)), s = d['Seats left'];
+      ring.attr('cx', cx).attr('cy', cy).attr('visibility', 'visible');
+      tip.show(cx, cy - 6, when(d['Checked at']), [!d['GoWild open'] ? 'No GoWild seats' : s == null ? "Open (Frontier didn't show a count)" : `${s} GoWild seat${s === 1 ? '' : 's'} left`]);
+    };
+    svg.append('rect').attr('class', 'scrub hit').attr('x', M.l).attr('y', M.t).attr('width', W - M.l - M.r).attr('height', H - M.t - M.b).attr('fill', 'transparent')
+      .on('pointerdown pointermove', (ev) => {
+        if (ev.pointerType !== 'mouse' && ev.type === 'pointermove' && !ev.buttons) return;
+        const d = nearest(d3.pointer(ev, svg.node())[0]);
+        if (ev.pointerType !== 'mouse') pinned = { name: 'seats', key: d['Checked at'] };
+        point(d);
       })
-      .on('pointerleave', () => tip.hide());
+      .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') { tip.hide(); ring.attr('visibility', 'hidden'); } });
+    if (pinned && pinned.name === 'seats') { const d = data.find((v) => v['Checked at'] === pinned.key); if (d) point(d); }
   }
 
   function drawTable(flight) {
