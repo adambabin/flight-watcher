@@ -2,16 +2,16 @@
  "alerts": [],
  "block_notified": null,
  "blocks": [],
- "digest_sent": "2026-10-26",
+ "digest_sent": "2026-10-27",
  "health": {
   "fail_streak": 0,
   "first_fail": null,
   "last_error": null,
-  "last_ok": "2026-10-27T10:06:33Z",
+  "last_ok": "2026-10-27T11:06:40Z",
   "notified": null,
   "sample_saved": "2026-10-27T01:17:30Z"
  },
- "last_check": "2026-10-27T10:06:33Z",
+ "last_check": "2026-10-27T11:06:40Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
