@@ -127,7 +127,7 @@ Every run commits to the **`state` branch**:
 
 ## Running from home
 
-If Frontier blocks GitHub's servers, run the same code on any always-on Mac, Linux box or Raspberry Pi:
+If Frontier blocks GitHub's servers, you'll get a "Frontier checks are failing" alert once checks have been refused for about three hours in a row, and the GitHub run goes red. Then run the same code on any always-on Mac, Linux box or Raspberry Pi:
 
 ```bash
 pip install -r requirements.txt

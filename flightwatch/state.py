@@ -24,7 +24,10 @@ DEFAULT_SETTINGS = {
     "nightly_alert": False,
 }
 
-HEALTH_ALERT_AFTER = 3   # failed checks in a row (bot blocks aside) before telling the user
+HEALTH_ALERT_AFTER = 3   # failed checks in a row before telling the user
+# Bot blocks count toward that streak at most once per this many minutes, so a run of blocks within one
+# night watch is one strike, and the alarm needs blocks across about three hourly runs.
+BLOCK_STRIKE_MINUTES = 45
 
 DEFAULT_RUNTIME = {
     "telegram_offset": 0,
@@ -34,9 +37,9 @@ DEFAULT_RUNTIME = {
     "block_notified": None,
     "last_check": None,
     "next_alert_id": 1,
-    # Checks that fail for reasons other than a bot block (layout change, outage), in a row.
+    # Failed checks in a row (layout change, outage, or bot blocks spread over hours).
     "health": {"fail_streak": 0, "first_fail": None, "last_error": None, "last_ok": None,
-               "notified": None, "sample_saved": None},
+               "notified": None, "sample_saved": None, "blocked": False, "last_block": None},
 }
 
 

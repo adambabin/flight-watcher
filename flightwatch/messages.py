@@ -120,13 +120,19 @@ def _since(h, tz, ref_date):
 
 
 def health_alert(h, now_local):
+    if h.get("blocked"):
+        fix = ("Frontier's bot protection has refused every run since then, so GitHub's servers are "
+               "probably blocked. If it doesn't clear up on its own, see the README for running the "
+               "tracker from home. GitHub marks this run as failed too.")
+    else:
+        fix = ("If Frontier changed its site, the parser needs an update. What Frontier sent is saved "
+               "on the state branch as <code>debug/last_failure.html</code>. GitHub marks this run as failed too.")
     return "\n".join([
         "⚠️ <b>Frontier checks are failing</b>",
         f"The last {h['fail_streak']} checks failed, starting {_since(h, now_local.tzinfo, now_local.date())}. "
         "Until this is fixed I can't see GoWild seats, so alerts won't fire.",
         f"Latest error: <code>{escape(h['last_error'] or '?')}</code>",
-        "If Frontier changed its site, the parser needs an update. What Frontier sent is saved "
-        "on the state branch as <code>debug/last_failure.html</code>. GitHub marks this run as failed too.",
+        fix,
     ])
 
 

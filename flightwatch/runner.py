@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 from . import commands, messages, rules, tracker
 from .airports import airport_tz
 from .frontier import FrontierError
-from .state import HEALTH_ALERT_AFTER, route_key
+from .state import BLOCK_STRIKE_MINUTES, HEALTH_ALERT_AFTER, route_key
 from .timeutil import iso, parse_clock, parse_iso
 
 NIGHT_START = (22, 30)          # local time from which a run counts as the night watch
@@ -130,7 +130,7 @@ class App:
         except FrontierError as e:
             self.log(f"{route_key(route)} {dep}: {e}")
             if e.blocked:
-                self._note_block()
+                self._note_block(route, dep, e)
                 raise Blocked(str(e)) from None
             self._check_failed(route, dep, e)
             return
@@ -149,9 +149,17 @@ class App:
                  + (f", events {events}" if events else ""))
         self.check_alerts(route, dep)
 
-    def _note_block(self):
+    def _note_block(self, route, dep, err):
         rt = self.state.runtime
-        rt["blocks"] = (rt["blocks"] + [iso(self._now())])[-50:]
+        now = self._now()
+        rt["blocks"] = (rt["blocks"] + [iso(now)])[-50:]
+        # One block is normal; being blocked run after run means GitHub's servers are shut out,
+        # so blocks feed the failure alarm, at most one strike per BLOCK_STRIKE_MINUTES.
+        h = rt["health"]
+        last = h.get("last_block")
+        if not last or now - parse_iso(last) >= timedelta(minutes=BLOCK_STRIKE_MINUTES):
+            h["last_block"] = iso(now)
+            self._check_failed(route, dep, err)
         today = self.local_now().date().isoformat()
         if rt.get("block_notified") != today:
             rt["block_notified"] = today
@@ -173,7 +181,8 @@ class App:
         now = self._now()
         if h["notified"]:
             self.notify(messages.health_ok(h, self.local_now()))
-        h.update(fail_streak=0, first_fail=None, last_error=None, notified=None, last_ok=iso(now))
+        h.update(fail_streak=0, first_fail=None, last_error=None, notified=None, last_ok=iso(now),
+                 blocked=False, last_block=None)
         page = getattr(self.frontier, "last_page", None)
         due = not h["sample_saved"] or now - parse_iso(h["sample_saved"]) >= SAMPLE_EVERY
         if page and due and any(f["stops"] == 0 for f in result["flights"]):
@@ -183,13 +192,14 @@ class App:
             h["sample_saved"] = iso(now)
 
     def _check_failed(self, route, dep, err):
-        """A check failed for a reason other than a bot block. Keep what Frontier sent, and
+        """A check failed (or a bot block counted as a strike). Keep what Frontier sent, and
         after HEALTH_ALERT_AFTER in a row, tell the user (once a day) and fail the run."""
         h = self.state.runtime["health"]
         now = self._now()
         h["fail_streak"] += 1
         h["first_fail"] = h["first_fail"] or iso(now)
         h["last_error"] = f"{route_key(route)} {dep}: {err}"
+        h["blocked"] = bool(err.blocked)
         self._save_failure(route, dep, err)
         today = self.local_now().date().isoformat()
         if h["fail_streak"] >= HEALTH_ALERT_AFTER and h["notified"] != today:
