@@ -44,7 +44,10 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 - `commands`: started by a relayed Telegram message or the relay's `/tick` (see below). If it lands in the night window it does `night()` instead. GitHub keeps only one pending run per concurrency group, so a commands run can replace a queued night run, and this keeps the night watch from being lost.
 - All runs share concurrency group `flightwatch` (never parallel), so writes to the state branch never conflict.
 
-**Health** (`runner.py` `_check_ok`/`_check_failed`, `runtime.health`): every failed check that isn't a bot block counts toward `fail_streak`. That includes layout errors, HTTP 5xx/404, network errors, and an empty result for a future date when the same weekday had flights a week earlier. Any good check resets it.
+**Health** (`runner.py` `_check_ok`/`_check_failed`, `runtime.health`): every failed check counts toward `fail_streak`. That includes layout errors, HTTP 5xx/404, network errors, and an empty result for a future date when the same weekday had flights a week earlier. Any good check resets it.
+- Bot blocks count too, but at most one strike per `BLOCK_STRIKE_MINUTES` (45), using `health.last_block`. A burst of blocks in one night watch is one strike, so the alarm takes blocks across about 3 hourly runs.
+- `health.blocked` marks a streak whose latest failure was a block, so the alarm suggests running from home instead of fixing the parser.
+- The first block each day still sends its own short note (`block_notified`).
 - At `HEALTH_ALERT_AFTER` (3) in a row, it sends a Telegram alert (at most once a day) and `__main__` exits 1, so the GitHub run goes red and GitHub emails the owner. Recovery sends one "working again" message.
 - The digest, `/status` and the dashboard banner (`dashboard.json` `health`) show it while it's failing.
 - Every failure writes `.state/debug/last_failure.html` plus `last_failure.json` (error, URL, time). A good page with nonstops is kept weekly as `debug/sample_ok.html`. Fixing a redesign means taking those from the `state` branch, dropping the new page into `tests/fixtures/`, and updating the parser until `test_frontier` passes.

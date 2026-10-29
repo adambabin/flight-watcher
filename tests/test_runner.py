@@ -213,3 +213,36 @@ def test_empty_day_counts_as_a_failure_when_that_weekday_flew_last_week(state):
     # flew a week earlier, so those 3 do.
     assert state.runtime["health"]["fail_streak"] == 3
     assert app2.health_alerted and any("no flights listed" in m for m in bot.sent)
+
+
+def _blocked(origin, dest, dep, now):
+    raise FrontierError("HTTP 403 from Frontier", 403, blocked=True)
+
+
+def test_blocked_run_after_run_raises_the_alarm_then_recovers(state):
+    clock = Clock(local(2026, 10, 28, 19, 5))
+    sent = []
+    for hour in range(3):
+        app, _, bot = make_app(state, clock, _blocked)
+        app.tick()
+        sent += bot.sent
+        assert app.health_alerted == (hour == 2)
+        clock.t += timedelta(hours=1)
+    h = state.runtime["health"]
+    assert h["fail_streak"] == 3 and h["blocked"]
+    alarm = [m for m in sent if "Frontier checks are failing" in m]
+    assert len(alarm) == 1 and "bot protection" in alarm[0] and "parser" not in alarm[0]
+    assert sum(m.startswith("⚠️ Frontier's bot protection") for m in sent) == 1   # the once-a-day note
+
+    app, _, bot = make_app(state, clock, released_at_midnight)
+    app.tick()
+    assert sum("working again" in m for m in bot.sent) == 1
+    assert h["fail_streak"] == 0 and not h["blocked"] and h["last_block"] is None
+
+
+def test_blocks_within_one_night_are_one_strike(state):
+    clock = Clock(local(2026, 10, 26, 22, 40))
+    app, fr, bot = make_app(state, clock, _blocked)
+    app.night()
+    assert len(fr.calls) >= 2   # retried after the first block
+    assert state.runtime["health"]["fail_streak"] == 1 and not app.health_alerted
