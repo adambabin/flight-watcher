@@ -134,13 +134,17 @@ Tickets 2–4 are setup notes (the bot, userinfobot, the relay token) and may co
   - The chart's y-axis is in days/hours.
   - The tiles and the takeaway say "11:05 AM, 3 days before departure".
   - `dashboard.json`'s "Release (min after midnight)" is no longer used by the page.
-- **#10 GitHub skipped scheduled runs: no 6 AM report or night watch** (Bug, Pending testing): https://app.notion.com/p/405f4a15b3ac8121a05de5011e205aa2. Fixed by the Cloudflare clock (PR #12). The user's Cloudflare steps are ticked and the first hourly trigger is verified. Still open: confirm a full night (the 10:40 PM watch and the ~6:05 AM report), then close it.
+- **#10 GitHub skipped scheduled runs: no 6 AM report or night watch** (Bug, **Closed** 2026-10-28): https://app.notion.com/p/405f4a15b3ac8121a05de5011e205aa2. Fixed by the Cloudflare clock (PR #12). Verified: the first full night ran the 10:40 PM–12:30 AM watch, the report arrived at 6:06 AM, and hourly checks on Oct 27–28 had no gaps.
 
-## Status (as of 2026-10-27)
+## Status (as of 2026-10-28)
 
 Done and live on `main`:
 - The tracker (PR #1) and the relay support (PR #3).
 - Owner-only inbox commands (PR #9), the 10:40 PM night watch and Pages dashboard (PR #10), the hourly 3-day lookahead (PR #11), and the Cloudflare clock (PR #12).
+- Site-change detection and the failure alarm, ticket #5 (PR #14).
+- Mobile dashboard, ticket #11 (PR #15).
+- Release chart in days before departure, ticket #12 (PR #16).
+- Repeated bot blocks raise the failure alarm (PR #17).
 - Secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are set, and the bot works: the setup check, commands and `/status` were all answered.
 - The user armed `/alert` for Mon Oct 26 flights.
 
@@ -149,18 +153,23 @@ Done and live on `main`:
   - The PAT's "Generate token" confirmation looks like it does nothing (mobile and desktop) but the token does get created. Its value is shown only once, so if it's lost, use "Regenerate token".
 - The Cloudflare clock is live (2026-10-26): the user deployed the new `relay/worker.js` and added Cron Triggers `5 * * * *` and `40 3,4 * * *`.
   - Verified: the 01:05 UTC trigger started issue_comment run 40430493952 about 39 s later, and it did a full `/tick`: 8 checks over Oct 27–29, both directions.
-  - Not yet verified: a full night (the 10:40 PM watch and the 6 AM report from the Cloudflare triggers).
+  - Verified: the first full night on the Cloudflare clock (Oct 27/28) ran the night watch and sent the 6:06 AM report.
   - To check: list the workflow runs. Cloudflare runs show `event: issue_comment` at about :05 past each hour, and GitHub cron runs show `schedule`.
 - GitHub Pages is on and serves `docs/` from `main`.
 
 Next steps:
-1. Confirm the first full night on the Cloudflare clock, then close ticket #10.
+1. Watch for Frontier bot blocks. The first one ever came at 7:06 PM CT on Oct 28, partway through a tick.
+   - One block a day is fine.
+   - If the failure alarm fires for blocks (about 3 hourly runs in a row), GitHub's runners are probably blocked. Then set up the README's "Running from home".
 2. After a few days of 3-day-lookahead data, find when GoWild seats really open, using `flights.json` `opened_prev`/`opened_at` or the dashboard. Then move the night watch (`NIGHT_START`, `HOT_ZONES`, the `40 3,4` triggers) and the `/alert` default date (`next_release_date`) to that time. Early data:
    - Mon Oct 26 ORD→IAH was open by 11:18 PM Sat.
    - Both Tue Oct 27 flights were open by 9:54 PM Sun.
    - Thu Oct 29 ORD→IAH opened between 4:20 and 7:52 AM Mon, about 3 days out.
    - Wed Oct 28 IAH→ORD F9 3136 reopened on the evening of Oct 26.
-3. Once the Pages dashboard has real data, delete the sample Google Sheet, the Notion SAMPLE mockups and the claude.ai mockup artifact.
+   - Thu Oct 29 IAH→ORD F9 3136 (5:06 PM) opened between 7:53 and 11:05 AM Mon, about 3 days out.
+   - The dashboard's release chart (ticket #12) shows this directly, as days before departure.
+3. Ask the user to try the dashboard on their phone and the new release chart; then close tickets #11 and #12.
+4. Once the Pages dashboard has real data, delete the sample Google Sheet, the Notion SAMPLE mockups and the claude.ai mockup artifact.
 
 Ideas raised but not done:
 - **Cron for other time zones**: only Central midnights are watched closely, so routes from other zones need their own 11:50 PM cron line.
