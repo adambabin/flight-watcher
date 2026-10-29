@@ -110,10 +110,10 @@
   "window_open_prev": null
  },
  "2026-10-29|ORD-IAH": {
-  "checks": 94,
+  "checks": 95,
   "date": "2026-10-29",
   "first_check": "2026-10-26T08:47:37Z",
-  "last_check": "2026-10-28T23:08:36Z",
+  "last_check": "2026-10-29T00:06:03Z",
   "route": "ORD-IAH",
   "window_closed_seen": false,
   "window_open_at": "2026-10-26T08:47:37Z",
