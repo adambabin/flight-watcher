@@ -1,6 +1,6 @@
 # flight-watcher
 
-Tracks Frontier **GoWild pass** seats on nonstop flights (ORD ⇄ IAH to start) and talks to you on Telegram:
+Tracks Frontier **GoWild pass** seats on nonstop flights on the routes you choose (configured through bot commands) and talks to you on Telegram:
 
 - **Night watch**: checks every few minutes from 10:40 PM to 12:30 AM Central, plus hourly checks up to 3 days ahead, to record when GoWild seats are actually released.
 - **Release alerts**: `/alert` before bed and you get a ping the moment seats open (or a note that none did).
@@ -11,7 +11,7 @@ Tracks Frontier **GoWild pass** seats on nonstop flights (ORD ⇄ IAH to start) 
 ## How GoWild works (what this is built around)
 
 - Each GoWild flight costs a $0.01 fare plus taxes and fees, about $15 for a domestic nonstop. Bags and seats are extra.
-- **Domestic GoWild fares open the day before departure**, usually right around **12:00 AM in the departure airport's time zone**. So Wednesday's ORD→IAH seats show up at midnight going into Tuesday, which is late Monday night. More seats can appear during the day when people cancel. International flights open 10 days out (not tracked here).
+- **Domestic GoWild fares open the day before departure**, usually right around **12:00 AM in the departure airport's time zone**. So Wednesday's seats show up at midnight going into Tuesday, which is late Monday night. More seats can appear during the day when people cancel. International flights open 10 days out (not tracked here).
 - Frontier releases only a handful of GoWild seats per flight, and they're confirmed bookings, not standby.
 - **Blackout dates** have no GoWild fares at all, for example Nov 24–25, Nov 28–30, Dec 19–24 and Dec 26–31, 2026. They're in `flightwatch/rules.py`, posted through April 2027. Add new ones when Frontier posts them.
 - Booking earlier than the window, or on blackout days, has sometimes been offered for an extra fee ($29–$89 early booking, $79–$159 peak day) during promotions.
@@ -39,14 +39,14 @@ Frontier has no public API. Its normal flight-search page, the one anyone sees l
 | Command | What it does |
 |---|---|
 | `/alert` | Ping me when the next release opens (tonight's midnight) |
-| `/alert wed`, `/alert 10/29`, `/alert ORD-IAH fri` | Alert for a specific travel date and/or route |
+| `/alert wed`, `/alert 10/29`, `/alert ATL-MCO fri` | Alert for a specific travel date and/or route |
 | `/alerts`, `/cancel all`, `/cancel wed` | List or cancel alerts |
 | `/nightly on` / `off` | Alert every night, no need to arm it |
-| `/pause IAH-ORD`, `/resume IAH-ORD` | Mute a direction. It's still tracked, just not reported. |
-| `/times ORD-IAH 6am-2pm`, `after 5pm`, `before 9am`, `any` | Only report flights departing in that window |
-| `/add ORD-DEN`, `/remove ORD-DEN` | Track another route (nonstops only) |
+| `/pause MCO-ATL`, `/resume MCO-ATL` | Mute a direction. It's still tracked, just not reported. |
+| `/times ATL-MCO 6am-2pm`, `after 5pm`, `before 9am`, `any` | Only report flights departing in that window |
+| `/add ATL-DEN`, `/remove ATL-DEN` | Track another route (nonstops only) |
 | `/digest 6:00`, `/digest off` | Morning report time |
-| `/history`, `/history IAH-ORD` | Recent release and sell-out times |
+| `/history`, `/history MCO-ATL` | Recent release and sell-out times |
 | `/now` | Check Frontier right now: today's and tomorrow's flights |
 | `/status` | Current settings and armed alerts |
 
@@ -103,7 +103,7 @@ The repo is **public**, so GitHub Actions minutes are free and unlimited. Your s
 ## Dashboard (GitHub Pages)
 
 `docs/index.html` is an interactive dashboard. It has:
-- **A flight picker:** each flight labeled with route and times, e.g. "F9 1882 · IAH → ORD · 11:36 AM → 2:25 PM".
+- **A flight picker:** each flight labeled with route and times, e.g. "F9 1234 · MCO → ATL · 11:36 AM → 1:25 PM".
 - **Open-window bars** for each night.
 - **Release times:** what time seats appeared each night.
 - **Week-over-week bars:** tap a weekday to filter the page to it.
@@ -148,7 +148,7 @@ Then add crontab entries, with the machine's clock on Central time:
 ```bash
 pip install -r requirements.txt pytest
 python -m pytest
-python -m flightwatch search ORD IAH 2026-10-28    # raw parsed result for one route/date
+python -m flightwatch search ATL MCO 2026-10-28    # raw parsed result for one route/date
 ```
 
 Code map: `frontier.py` reads Frontier's page. `tracker.py` turns checks into opened/sold-out history. `runner.py` holds the tick and night-watch logic. `commands.py` and `messages.py` are the Telegram side. `rules.py` has blackout dates.
