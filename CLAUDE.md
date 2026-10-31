@@ -13,6 +13,15 @@ Domain facts the design relies on:
 - Seats are few and can reappear later when people cancel.
 - Blackout dates have no GoWild fares (`flightwatch/rules.py`, posted through Apr 2027; add new dates there when Frontier posts them).
 
+## Privacy: no personal information on GitHub
+
+This repo is **public**, and so is its `state` branch and the `raw.githubusercontent.com` dashboard data. Treat everything committed or pushed here as readable by anyone.
+- Never commit or push personal information: names, email addresses, phone numbers, home city or address, travel plans or itineraries, Telegram chat IDs, tokens or any other secret. Secrets live in the GitHub/Cloudflare secret stores only.
+- Docs, README examples, tests and fixtures use generic placeholders (e.g. ATL/MCO, `F9 1234`), not the owner's real routes, flights or dates. The README is already generic.
+- Be careful with new data written to `state` (settings, alerts, history, `debug/` page snapshots): keep it to flight data, and never store identifiers or credentials there.
+- This file and some code/tests still name the owner's real routes and GitHub username. Don't add more personal detail, and scrub it when touching those parts.
+- Backups or exports of dashboard data go to private places (the owner's Google Sheet or Drive), not into this repo.
+
 ## Commands
 
 ```bash
