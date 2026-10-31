@@ -140,10 +140,10 @@
   "window_open_prev": null
  },
  "2026-10-31|IAH-ORD": {
-  "checks": 137,
+  "checks": 138,
   "date": "2026-10-31",
   "first_check": "2026-10-28T05:33:49Z",
-  "last_check": "2026-10-31T22:06:22Z",
+  "last_check": "2026-10-31T23:07:03Z",
   "route": "IAH-ORD",
   "window_closed_seen": false,
   "window_open_at": "2026-10-28T05:33:49Z",
@@ -160,30 +160,30 @@
   "window_open_prev": null
  },
  "2026-11-01|IAH-ORD": {
-  "checks": 111,
+  "checks": 112,
   "date": "2026-11-01",
   "first_check": "2026-10-29T05:38:06Z",
-  "last_check": "2026-10-31T22:06:28Z",
+  "last_check": "2026-10-31T23:07:08Z",
   "route": "IAH-ORD",
   "window_closed_seen": false,
   "window_open_at": "2026-10-29T05:38:06Z",
   "window_open_prev": null
  },
  "2026-11-01|ORD-IAH": {
-  "checks": 111,
+  "checks": 112,
   "date": "2026-11-01",
   "first_check": "2026-10-29T05:37:41Z",
-  "last_check": "2026-10-31T22:06:01Z",
+  "last_check": "2026-10-31T23:06:02Z",
   "route": "ORD-IAH",
   "window_closed_seen": false,
   "window_open_at": "2026-10-29T05:37:41Z",
   "window_open_prev": null
  },
  "2026-11-02|IAH-ORD": {
-  "checks": 49,
+  "checks": 50,
   "date": "2026-11-02",
   "first_check": "2026-10-30T05:36:55Z",
-  "last_check": "2026-10-31T22:06:35Z",
+  "last_check": "2026-10-31T23:07:15Z",
   "route": "IAH-ORD",
   "window_closed_seen": false,
   "window_open_at": "2026-10-30T05:36:55Z",
@@ -200,20 +200,20 @@
   "window_open_prev": null
  },
  "2026-11-03|IAH-ORD": {
-  "checks": 21,
+  "checks": 22,
   "date": "2026-11-03",
   "first_check": "2026-10-31T06:06:39Z",
-  "last_check": "2026-10-31T22:06:39Z",
+  "last_check": "2026-10-31T23:07:22Z",
   "route": "IAH-ORD",
   "window_closed_seen": false,
   "window_open_at": "2026-10-31T06:06:39Z",
   "window_open_prev": null
  },
  "2026-11-03|ORD-IAH": {
-  "checks": 21,
+  "checks": 22,
   "date": "2026-11-03",
   "first_check": "2026-10-31T06:06:12Z",
-  "last_check": "2026-10-31T22:06:15Z",
+  "last_check": "2026-10-31T23:06:57Z",
   "route": "ORD-IAH",
   "window_closed_seen": false,
   "window_open_at": "2026-10-31T06:06:12Z",
