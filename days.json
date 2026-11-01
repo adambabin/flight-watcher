@@ -180,20 +180,20 @@
   "window_open_prev": null
  },
  "2026-11-02|IAH-ORD": {
-  "checks": 55,
+  "checks": 89,
   "date": "2026-11-02",
   "first_check": "2026-10-30T05:36:55Z",
-  "last_check": "2026-11-01T03:06:35Z",
+  "last_check": "2026-11-01T05:33:32Z",
   "route": "IAH-ORD",
   "window_closed_seen": false,
   "window_open_at": "2026-10-30T05:36:55Z",
   "window_open_prev": null
  },
  "2026-11-02|ORD-IAH": {
-  "checks": 54,
+  "checks": 88,
   "date": "2026-11-02",
   "first_check": "2026-10-30T05:36:28Z",
-  "last_check": "2026-11-01T03:06:07Z",
+  "last_check": "2026-11-01T05:33:26Z",
   "route": "ORD-IAH",
   "window_closed_seen": false,
   "window_open_at": "2026-10-30T05:36:28Z",
