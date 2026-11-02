@@ -1,18 +1,19 @@
 {
  "alerts": [],
- "block_notified": "2026-11-01",
+ "block_notified": "2026-11-02",
  "blocks": [
   "2026-10-29T00:06:07Z",
   "2026-11-01T05:03:56Z",
-  "2026-11-02T05:20:13Z"
+  "2026-11-02T05:20:13Z",
+  "2026-11-02T07:06:24Z"
  ],
  "digest_sent": "2026-11-01",
  "health": {
-  "blocked": false,
-  "fail_streak": 0,
-  "first_fail": null,
-  "last_block": null,
-  "last_error": null,
+  "blocked": true,
+  "fail_streak": 1,
+  "first_fail": "2026-11-02T07:06:24Z",
+  "last_block": "2026-11-02T07:06:24Z",
+  "last_error": "ORD-IAH 2026-11-02: no flight data on select page",
   "last_ok": "2026-11-02T06:32:41Z",
   "notified": null,
   "sample_saved": "2026-10-27T01:17:30Z"
