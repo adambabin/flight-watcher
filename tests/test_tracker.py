@@ -67,3 +67,13 @@ def test_state_round_trip(tmp_path):
     assert s2.flights == s.flights
     assert s2.settings["routes"][1]["notify"] is False
     assert (tmp_path / "observations" / "2026-10.jsonl").read_text().count("\n") == 1
+
+
+def test_day_without_nonstops_says_checked_not_unchecked(state):
+    from flightwatch import messages
+    p = page([], False)
+    tracker.record(state, ROUTE, DEP, parse_select_page(p), T0, "test")
+    text = messages.route_day_block(state, ROUTE, DEP, "")
+    assert "No nonstop flights listed by Frontier (1 check," in text
+    assert "No checks yet" not in text
+    assert "No checks yet." in messages.route_day_block(state, ROUTE, DEP + timedelta(days=1), "")

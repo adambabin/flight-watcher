@@ -8,7 +8,7 @@ from .airports import airport_tz
 from .frontier import search_url
 from .state import HEALTH_ALERT_AFTER, route_key
 from .timeutil import clock, day_label, dep_clock, local_stamp, parse_clock
-from .tracker import flights_for, matching, release_estimate
+from .tracker import day_key, flights_for, matching, release_estimate
 
 
 def arrow(rkey):
@@ -68,7 +68,11 @@ def route_day_block(state, route, dep, title):
     all_recs = flights_for(state, rkey, dep)
     recs = matching(route, all_recs)
     if not all_recs:
-        return f"{head}\nNo checks yet (or no nonstop flights listed)."
+        day = state.days.get(day_key(dep, rkey))
+        if day and day.get("checks"):
+            return (f"{head}\nNo nonstop flights listed by Frontier "
+                    f"({day['checks']} check{'s' if day['checks'] != 1 else ''}, last {_stamp(day.get('last_check'), tz, dep)}).")
+        return f"{head}\nNo checks yet."
     lines = [head] + [flight_line(r, tz, dep) for r in recs]
     hidden = len(all_recs) - len(recs)
     if hidden:
