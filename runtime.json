@@ -3,7 +3,8 @@
  "block_notified": "2026-11-01",
  "blocks": [
   "2026-10-29T00:06:07Z",
-  "2026-11-01T05:03:56Z"
+  "2026-11-01T05:03:56Z",
+  "2026-11-02T05:20:13Z"
  ],
  "digest_sent": "2026-11-01",
  "health": {
@@ -12,11 +13,11 @@
   "first_fail": null,
   "last_block": null,
   "last_error": null,
-  "last_ok": "2026-11-02T04:06:35Z",
+  "last_ok": "2026-11-02T06:32:41Z",
   "notified": null,
   "sample_saved": "2026-10-27T01:17:30Z"
  },
- "last_check": "2026-11-02T04:06:35Z",
+ "last_check": "2026-11-02T06:32:41Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
