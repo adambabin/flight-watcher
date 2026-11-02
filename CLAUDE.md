@@ -79,7 +79,10 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 **Telegram I/O** has two paths, and `process_commands` reads both:
 1. `telegram.py` `getUpdates`, which only gets messages at scheduled runs. Once the webhook is set, Telegram returns 409 for this, and that's ignored on purpose.
 2. Relay: the Cloudflare Worker `relay/worker.js` receives the Telegram webhook, posts the text as a comment on **issue #2 ("Telegram inbox")** using the user's fine-grained PAT, and reacts 👀. The `issue_comment` event starts the workflow in `commands` mode. `inbox.py` reads the comments with the workflow's `GITHUB_TOKEN` and deletes each one after answering it.
-- The repo and issue number are hard-coded in `relay/worker.js` (`INBOX_ISSUE = 2`) and in the workflow (`INBOX_ISSUE: "2"` plus the `if:` on the job).
+- The repo and issue number are settings, so forks work without code edits: the worker reads `GITHUB_REPO` and `INBOX_ISSUE` (Cloudflare text variables), and the workflow reads the repo variable `vars.INBOX_ISSUE` (defaulting to `2`, this repo's inbox) in `env` and the job's `if:`. The deployed `gowild-relay` still runs the older code with these hard-coded. If you redeploy `worker.js`, first add `GITHUB_REPO=adambabin/flight-watcher` and `INBOX_ISSUE=2` to the worker, or `/setup` reports them missing and the relay stops posting.
+- `SETUP_PROMPT.md` is a paste-into-Claude walkthrough for a non-technical friend to fork and set this up. Keep it in sync when setup steps change.
+- `/timezone <zone>` changes `settings.timezone` (night watch, report, `pick_mode`) and replies with the UTC night cron line for that zone (`commands.night_cron`).
+- The dashboard derives its data URL from `<owner>.github.io/<repo>/`, falling back to this repo's URL elsewhere (local tests).
 - The webhook secret is SHA-256 of `gowild-relay:<bot token>`, and `/setup` on the worker registers the webhook.
 - Measured: comment → reply in about 11 s.
 

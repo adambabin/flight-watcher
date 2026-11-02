@@ -170,6 +170,7 @@ def status(state, now_local):
     d = s["digest"]
     lines.append(f"\nMorning report: {clock(parse_clock(d['time'])) if d['enabled'] else 'off'}")
     lines.append(f"Nightly midnight alert: {'on' if s['nightly_alert'] else 'off'}")
+    lines.append(f"Time zone: {escape(s['timezone'])}")
     lines.append("\n" + alerts_list(state))
     last = state.runtime.get("last_check")
     if last:
