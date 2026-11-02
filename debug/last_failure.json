@@ -1,10 +1,10 @@
 {
- "at": "2026-11-01T05:03:56Z",
+ "at": "2026-11-02T01:05:51Z",
  "route": "ORD-IAH",
- "date": "2026-11-02",
- "error": "no flight data on select page",
+ "date": "2026-11-01",
+ "error": "Frontier's page layout changed: a journey has no flights list",
  "status": null,
- "layout": false,
- "url": "https://booking.flyfrontier.com/Flight/InternalSelect?o1=ORD&d1=IAH&dd1=Nov+02%2C+2026&ADT=1&mon=true&promo=",
+ "layout": true,
+ "url": "https://booking.flyfrontier.com/Flight/InternalSelect?o1=ORD&d1=IAH&dd1=Nov+01%2C+2026&ADT=1&mon=true&promo=",
  "page_saved": true
 }
