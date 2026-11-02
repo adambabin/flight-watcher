@@ -152,7 +152,14 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
 
 <script>
 (function () {
-  const DATA_URL = 'https://raw.githubusercontent.com/adambabin/flight-watcher/state/dashboard.json';
+  // On GitHub Pages (owner.github.io/repo/) read that repo's state branch, so forks work unchanged.
+  const DATA_URL = (() => {
+    const owner = (location.hostname.match(/^([^.]+)\.github\.io$/i) || [])[1];
+    const repo = location.pathname.split('/').filter(Boolean)[0];
+    return owner && repo
+      ? `https://raw.githubusercontent.com/${owner}/${repo}/state/dashboard.json`
+      : 'https://raw.githubusercontent.com/adambabin/flight-watcher/state/dashboard.json';
+  })();
   const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const $ = (s) => document.querySelector(s);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } } };

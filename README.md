@@ -46,6 +46,7 @@ Frontier has no public API. Its normal flight-search page, the one anyone sees l
 | `/times ATL-MCO 6am-2pm`, `after 5pm`, `before 9am`, `any` | Only report flights departing in that window |
 | `/add ATL-DEN`, `/remove ATL-DEN` | Track another route (nonstops only) |
 | `/digest 6:00`, `/digest off` | Morning report time |
+| `/timezone mountain` | Your home time zone (night watch, report time) |
 | `/history`, `/history MCO-ATL` | Recent release and sell-out times |
 | `/now` | Check Frontier right now: today's and tomorrow's flights |
 | `/status` | Current settings and armed alerts |
@@ -61,7 +62,7 @@ An alert stays armed until its travel date passes. It pings when seats open, and
 Telegram can't start a GitHub run by itself. A tiny free Cloudflare Worker (`relay/worker.js`) bridges the two:
 
 1. Telegram sends your message to the worker.
-2. The worker posts the message as a comment on the [Telegram inbox](../../issues/2) issue and reacts 👀.
+2. The worker posts the message as a comment on your "Telegram inbox" issue and reacts 👀.
 3. That comment starts the workflow, which answers your message and deletes the comment.
 
 **Setup:**
@@ -73,11 +74,12 @@ Telegram can't start a GitHub run by itself. A tiny free Cloudflare Worker (`rel
 2. **Cloudflare worker.** Sign up free at [dash.cloudflare.com](https://dash.cloudflare.com).
    - Go to **Workers & Pages → Create → Start with Hello World → Deploy**.
    - Choose **Edit code**, replace everything with the contents of `relay/worker.js`, and **Deploy**.
-3. **Worker settings.** In the worker, go to **Settings → Variables and secrets** and add three, each as type *Secret*:
-   - `TELEGRAM_BOT_TOKEN`
-   - `TELEGRAM_CHAT_ID`
-   - `GITHUB_TOKEN` (the token from step 1)
-4. **Connect the bot.** Open `https://<your-worker>.workers.dev/setup` in a browser. It should say *Done!*. Then send `/status` to the bot.
+3. **Inbox issue.** In your repo, open **Issues → New issue**, title it `Telegram inbox`, and create it. Note its number (shown as `#1`, `#2`…). If the Issues tab is missing (it's off on forks), turn it on under Settings → General → Features → Issues.
+   - Then go to Settings → Secrets and variables → Actions → **Variables** tab → New repository variable: `INBOX_ISSUE` = that number.
+4. **Worker settings.** In the worker, go to **Settings → Variables and secrets** and add:
+   - type *Secret*: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `GITHUB_TOKEN` (the token from step 1)
+   - type *Text*: `GITHUB_REPO` (e.g. `yourname/flight-watcher`) and `INBOX_ISSUE` (the issue number)
+5. **Connect the bot.** Open `https://<your-worker>.workers.dev/setup` in a browser. It should say *Done!*. Then send `/status` to the bot.
 
 **To undo:** open `https://api.telegram.org/bot<TOKEN>/deleteWebhook`. The tracker falls back to reading Telegram directly at each scheduled check.
 
@@ -98,7 +100,7 @@ The repo is **public**, so GitHub Actions minutes are free and unlimited. Your s
 
 **Late starts:** if the night watch starts after the seats are already open, the history says "already open at first check" instead of guessing a release time.
 
-**Other time zones:** only Central-time nights are watched closely. A route departing from another time zone is still checked hourly. To catch its exact release, add a cron line for that zone's 10:40 PM.
+**Other time zones:** the night watch runs at 10:40 PM in the time zone set with `/timezone` (Central by default). Send the bot `/timezone eastern` (or mountain, arizona, pacific…) and it replies with the matching night Cron Trigger line, e.g. `40 4,5 * * *` for Mountain. Put that line on the Cloudflare worker and in `.github/workflows/watch.yml` in place of `40 3,4 * * *`. Routes from other zones are still checked hourly.
 
 ## Dashboard (GitHub Pages)
 
@@ -112,7 +114,7 @@ The repo is **public**, so GitHub Actions minutes are free and unlimited. Your s
 
 After every run, the tracker writes `dashboard.json` to the `state` branch, and the page reads it from `raw.githubusercontent.com`, so it's always current (GitHub caches the file for up to ~5 minutes).
 
-**Turn it on once:** go to repo Settings → Pages → Build and deployment → Source: **Deploy from a branch** → Branch: **main**, folder **/docs** → Save. The site appears at https://adambabin.github.io/flight-watcher/.
+**Turn it on once:** go to repo Settings → Pages → Build and deployment → Source: **Deploy from a branch** → Branch: **main**, folder **/docs** → Save. The site appears at `https://<your-username>.github.io/flight-watcher/`, and it reads that repo's own data.
 
 ## Where the data lives
 
@@ -135,13 +137,14 @@ export TELEGRAM_BOT_TOKEN=... TELEGRAM_CHAT_ID=...
 python -m flightwatch check --state ~/.flightwatch     # setup test
 ```
 
-Then add crontab entries, with the machine's clock on Central time:
+Then add crontab entries (`crontab -e`), with the machine's clock in the same time zone as `/timezone`:
 
 ```
-50 23 * * *  cd /path/to/flight-watcher && python -m flightwatch auto --state ~/.flightwatch
-5 */3 * * *  cd /path/to/flight-watcher && python -m flightwatch auto --state ~/.flightwatch
-5 6 * * *    cd /path/to/flight-watcher && python -m flightwatch auto --state ~/.flightwatch
+40 22 * * *  cd /path/to/flight-watcher && python -m flightwatch auto --state ~/.flightwatch
+5 * * * *    cd /path/to/flight-watcher && python -m flightwatch auto --state ~/.flightwatch
 ```
+
+The home copy keeps its own history in `~/.flightwatch` and doesn't update the dashboard. Turn the GitHub runs off (Actions → GoWild watch → ⋯ → Disable workflow) and remove the relay's webhook (see above) so the two don't both answer.
 
 ## Development
 

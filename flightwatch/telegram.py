@@ -21,6 +21,7 @@ COMMANDS = [
     ("add", "Track a route: /add ORD-DEN"),
     ("remove", "Stop tracking a route: /remove ORD-DEN"),
     ("digest", "Morning report time: /digest 6:00 (or off)"),
+    ("timezone", "Home time zone: /timezone mountain"),
     ("history", "Recent release and sell-out times"),
     ("help", "All commands"),
 ]

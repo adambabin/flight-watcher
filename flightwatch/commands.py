@@ -2,6 +2,7 @@
 import re
 from datetime import datetime, timedelta
 from html import escape
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from . import messages, rules
 from .state import route_key
@@ -19,6 +20,7 @@ I check Frontier for GoWild seats on your routes, watch the midnight release, an
 /times ORD-IAH 6am-2pm · /times ORD-IAH after 5pm · /times ORD-IAH any
 /add ORD-DEN · /remove ORD-DEN
 /digest 6:00 · /digest off
+/timezone mountain — your home time zone (night watch and report times)
 /history · /history IAH-ORD
 /status
 
@@ -259,7 +261,48 @@ def _digest(state, args, now):
         raise CommandError("Use /digest 6:00, /digest 7am, or /digest off.")
     dg["time"], dg["enabled"] = hhmm(_clock(v)), True
     return (f"Morning report at {dg['time']}. It goes out with the first check at or after that "
-            "time (checks run about every 3 hours, plus 6:05 AM Central).")
+            "time (checks run every hour at about :05).")
+
+
+_TZ_NAMES = {
+    "eastern": "America/New_York", "et": "America/New_York", "est": "America/New_York", "edt": "America/New_York",
+    "central": "America/Chicago", "ct": "America/Chicago", "cst": "America/Chicago", "cdt": "America/Chicago",
+    "mountain": "America/Denver", "mt": "America/Denver", "mst": "America/Denver", "mdt": "America/Denver",
+    "arizona": "America/Phoenix",
+    "pacific": "America/Los_Angeles", "pt": "America/Los_Angeles", "pst": "America/Los_Angeles",
+    "pdt": "America/Los_Angeles",
+    "alaska": "America/Anchorage", "hawaii": "Pacific/Honolulu", "puerto rico": "America/Puerto_Rico",
+}
+
+
+def night_cron(zone):
+    """UTC cron line that starts the night watch at 10:40 PM in `zone`, in both standard and
+    daylight time (the extra run lands at 11:40 PM or 9:40 PM and is harmless)."""
+    hours = sorted({datetime(2026, m, 15, 22, 40, tzinfo=ZoneInfo(zone)).astimezone(ZoneInfo("UTC")).hour
+                    for m in (1, 7)})
+    return f"40 {','.join(map(str, hours))} * * *"
+
+
+def _timezone(state, args, now):
+    want = " ".join(args).strip()
+    if not want:
+        return (f"Time zone: {escape(state.settings['timezone'])}. Change it with /timezone eastern, "
+                "central, mountain, arizona, pacific, alaska or hawaii.")
+    zone = _TZ_NAMES.get(want.lower())
+    if zone is None and "/" in want:
+        try:
+            ZoneInfo(want)
+            zone = want
+        except (ZoneInfoNotFoundError, ValueError):
+            pass
+    if zone is None:
+        raise CommandError(f"I don't know the time zone “{escape(want)}”. Try eastern, central, mountain, "
+                           "arizona, pacific, alaska, hawaii, or a name like America/Denver.")
+    state.settings["timezone"] = zone
+    return (f"🕰 Time zone set to {zone}. The night watch runs 10:40 PM–12:30 AM and the morning report "
+            f"goes out in this time zone.\n\nThe night watch only starts if the clock fires at 10:40 PM your time: "
+            f"set the night Cron Trigger on your Cloudflare worker (and the matching line in "
+            f".github/workflows/watch.yml) to <code>{night_cron(zone)}</code>.")
 
 
 def _history(state, args, now):
@@ -274,5 +317,5 @@ _HANDLERS = {
     "pause": _set_notify(False), "mute": _set_notify(False),
     "resume": _set_notify(True), "unmute": _set_notify(True),
     "times": _times, "add": _add, "remove": _remove,
-    "digest": _digest, "history": _history,
+    "digest": _digest, "history": _history, "timezone": _timezone, "tz": _timezone,
 }

@@ -90,3 +90,27 @@ def test_digest_and_nightly_settings(state):
 def test_unknown_command_shows_help(state):
     assert "GoWild watcher" in commands.handle(state, "hello", MON_10PM)
     assert "Routes" in commands.handle(state, "/status@MyBot", MON_10PM)
+
+
+@pytest.mark.parametrize("zone,line", [
+    ("America/Chicago", "40 3,4 * * *"),
+    ("America/New_York", "40 2,3 * * *"),
+    ("America/Denver", "40 4,5 * * *"),
+    ("America/Los_Angeles", "40 5,6 * * *"),
+    ("America/Phoenix", "40 5 * * *"),
+])
+def test_night_cron(zone, line):
+    assert commands.night_cron(zone) == line
+
+
+def test_timezone_command(state):
+    assert "America/Chicago" in commands.handle(state, "/timezone", MON_10PM)
+    reply = commands.handle(state, "/timezone Mountain", MON_10PM)
+    assert state.settings["timezone"] == "America/Denver"
+    assert "40 4,5 * * *" in reply
+    commands.handle(state, "/tz America/Los_Angeles", MON_10PM)
+    assert state.settings["timezone"] == "America/Los_Angeles"
+    assert "don't know" in commands.handle(state, "/timezone Mars", MON_10PM)
+    assert "don't know" in commands.handle(state, "/timezone Not/AZone", MON_10PM)
+    assert state.settings["timezone"] == "America/Los_Angeles"
+    assert "America/Los_Angeles" in commands.handle(state, "/status", MON_10PM)

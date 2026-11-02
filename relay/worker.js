@@ -7,20 +7,22 @@
 // you know the message arrived.
 //
 // Settings (Cloudflare: Worker -> Settings -> Variables and secrets):
-//   TELEGRAM_BOT_TOKEN  the bot token from BotFather
-//   TELEGRAM_CHAT_ID    your chat id (only your messages are passed on)
-//   GITHUB_TOKEN        fine-grained token, this repo only, Issues: read and write
+//   TELEGRAM_BOT_TOKEN  the bot token from BotFather                       (Secret)
+//   TELEGRAM_CHAT_ID    your chat id (only your messages are passed on)    (Secret)
+//   GITHUB_TOKEN        fine-grained token, this repo only, Issues: read and write (Secret)
+//   GITHUB_REPO         your repo, e.g. yourname/flight-watcher            (Text)
+//   INBOX_ISSUE         the number of your "Telegram inbox" issue, e.g. 1  (Text)
 //
 // After deploying, open https://<your-worker>.workers.dev/setup once to point the bot at it.
 //
 // It is also the tracker's clock: GitHub's own schedule drops and delays runs, so add
 // Cron Triggers to this worker (Settings -> Triggers -> Cron Triggers, times in UTC):
 //   5 * * * *       every hour
-//   40 3,4 * * *    10:40 PM Central, the night watch (the pair covers daylight time)
+//   40 3,4 * * *    10:40 PM Central, the night watch (the pair covers daylight time).
+//                   Other time zones: send the bot /timezone <zone> and it tells you the line.
 // Each one posts "/tick" to the inbox issue, which starts a run within seconds.
 
-const REPO = "adambabin/flight-watcher";
-const INBOX_ISSUE = 2;
+const SETTINGS = ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "GITHUB_TOKEN", "GITHUB_REPO", "INBOX_ISSUE"];
 
 export default {
   async scheduled(event, env, ctx) {
@@ -32,7 +34,7 @@ export default {
     const secret = await webhookSecret(env.TELEGRAM_BOT_TOKEN || "");
 
     if (request.method === "GET" && url.pathname === "/setup") {
-      const missing = ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "GITHUB_TOKEN"].filter((k) => !env[k]);
+      const missing = SETTINGS.filter((k) => !env[k]);
       if (missing.length) return new Response(`Missing settings: ${missing.join(", ")}`, { status: 500 });
       const r = await telegram(env, "setWebhook", {
         url: `${url.origin}/telegram`,
@@ -58,7 +60,7 @@ export default {
         } else {
           await telegram(env, "sendMessage", {
             chat_id: msg.chat.id,
-            text: `Couldn't pass that on to GitHub (HTTP ${gh.status}). Check the relay's GITHUB_TOKEN.`,
+            text: `Couldn't pass that on to GitHub (HTTP ${gh.status}). Check the relay's GITHUB_TOKEN, GITHUB_REPO and INBOX_ISSUE.`,
           });
         }
       }
@@ -70,7 +72,9 @@ export default {
 };
 
 function postToInbox(env, body) {
-  return fetch(`https://api.github.com/repos/${REPO}/issues/${INBOX_ISSUE}/comments`, {
+  const repo = String(env.GITHUB_REPO || "").trim().replace(/^https:\/\/github\.com\//, "").replace(/\/+$/, "");
+  const issue = String(env.INBOX_ISSUE || "").trim().replace(/^#/, "");
+  return fetch(`https://api.github.com/repos/${repo}/issues/${issue}/comments`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.GITHUB_TOKEN}`,
