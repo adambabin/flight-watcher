@@ -12,11 +12,11 @@
   "first_fail": null,
   "last_block": null,
   "last_error": null,
-  "last_ok": "2026-11-02T03:41:37Z",
+  "last_ok": "2026-11-02T04:06:35Z",
   "notified": null,
   "sample_saved": "2026-10-27T01:17:30Z"
  },
- "last_check": "2026-11-02T03:41:37Z",
+ "last_check": "2026-11-02T04:06:35Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
