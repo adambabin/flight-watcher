@@ -1,20 +1,21 @@
 {
  "alerts": [],
- "block_notified": "2026-11-02",
+ "block_notified": "2026-11-03",
  "blocks": [
   "2026-10-29T00:06:07Z",
   "2026-11-01T05:03:56Z",
   "2026-11-02T05:20:13Z",
   "2026-11-02T07:06:24Z",
-  "2026-11-02T16:06:09Z"
+  "2026-11-02T16:06:09Z",
+  "2026-11-03T22:06:07Z"
  ],
  "digest_sent": "2026-11-03",
  "health": {
-  "blocked": false,
-  "fail_streak": 0,
-  "first_fail": null,
-  "last_block": null,
-  "last_error": null,
+  "blocked": true,
+  "fail_streak": 1,
+  "first_fail": "2026-11-03T22:06:07Z",
+  "last_block": "2026-11-03T22:06:07Z",
+  "last_error": "ORD-IAH 2026-11-03: HTTP 406 from Frontier",
   "last_ok": "2026-11-03T21:06:42Z",
   "notified": null,
   "sample_saved": "2026-11-03T02:06:09Z"
