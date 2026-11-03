@@ -11,16 +11,16 @@
  ],
  "digest_sent": "2026-11-03",
  "health": {
-  "blocked": true,
-  "fail_streak": 1,
-  "first_fail": "2026-11-03T22:06:07Z",
-  "last_block": "2026-11-03T22:06:07Z",
-  "last_error": "ORD-IAH 2026-11-03: HTTP 406 from Frontier",
-  "last_ok": "2026-11-03T21:06:42Z",
+  "blocked": false,
+  "fail_streak": 0,
+  "first_fail": null,
+  "last_block": null,
+  "last_error": null,
+  "last_ok": "2026-11-03T23:06:35Z",
   "notified": null,
   "sample_saved": "2026-11-03T02:06:09Z"
  },
- "last_check": "2026-11-03T21:06:42Z",
+ "last_check": "2026-11-03T23:06:35Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
