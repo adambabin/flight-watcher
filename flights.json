@@ -575,7 +575,7 @@
   "dep": "2026-11-05T17:06:00",
   "first_seen": "2026-11-02T08:06:37Z",
   "flight": "F9 1882",
-  "last_check": "2026-11-04T03:06:29Z",
+  "last_check": "2026-11-04T03:41:36Z",
   "opened_at": "2026-11-02T14:06:40Z",
   "opened_prev": "2026-11-02T13:06:50Z",
   "price": 78.99,
@@ -620,17 +620,17 @@
   "dep": "2026-11-05T13:04:00",
   "first_seen": "2026-11-02T08:06:12Z",
   "flight": "F9 3135",
-  "last_check": "2026-11-04T03:06:05Z",
+  "last_check": "2026-11-04T03:41:09Z",
   "opened_at": "2026-11-03T21:06:12Z",
   "opened_prev": "2026-11-03T20:06:40Z",
   "price": 78.99,
   "reopens": 0,
   "route": "ORD-IAH",
   "seats": null,
-  "sold_out_at": null,
-  "sold_out_prev": null,
+  "sold_out_at": "2026-11-04T03:41:09Z",
+  "sold_out_prev": "2026-11-04T03:06:05Z",
   "standard": 149.98,
-  "status": "open",
+  "status": "closed",
   "timeline": [
    [
     "2026-11-02T08:06:12Z",
@@ -641,6 +641,11 @@
     "2026-11-03T21:06:12Z",
     "open",
     null
+   ],
+   [
+    "2026-11-04T03:41:09Z",
+    "closed",
+    null
    ]
   ]
  },
@@ -650,17 +655,17 @@
   "dep": "2026-11-06T17:06:00",
   "first_seen": "2026-11-03T07:06:35Z",
   "flight": "F9 3136",
-  "last_check": "2026-11-04T03:06:36Z",
+  "last_check": "2026-11-04T03:41:41Z",
   "opened_at": "2026-11-03T13:06:38Z",
   "opened_prev": "2026-11-03T12:06:34Z",
   "price": 98.99,
   "reopens": 0,
   "route": "IAH-ORD",
   "seats": null,
-  "sold_out_at": null,
-  "sold_out_prev": null,
+  "sold_out_at": "2026-11-04T03:41:41Z",
+  "sold_out_prev": "2026-11-04T03:06:36Z",
   "standard": 149.98,
-  "status": "open",
+  "status": "closed",
   "timeline": [
    [
     "2026-11-03T07:06:35Z",
@@ -671,6 +676,11 @@
     "2026-11-03T13:06:38Z",
     "open",
     null
+   ],
+   [
+    "2026-11-04T03:41:41Z",
+    "closed",
+    null
    ]
   ]
  },
@@ -680,7 +690,7 @@
   "dep": "2026-11-06T13:04:00",
   "first_seen": "2026-11-03T07:06:11Z",
   "flight": "F9 3135",
-  "last_check": "2026-11-04T03:06:12Z",
+  "last_check": "2026-11-04T03:41:16Z",
   "opened_at": "2026-11-03T07:06:11Z",
   "opened_prev": null,
   "price": 98.99,
