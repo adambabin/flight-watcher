@@ -1,10 +1,10 @@
 {
- "at": "2026-11-04T23:07:07Z",
- "route": "IAH-ORD",
- "date": "2026-11-07",
- "error": "HTTP 503 from Frontier",
- "status": 503,
- "layout": false,
- "url": "https://booking.flyfrontier.com/Flight/InternalSelect?o1=IAH&d1=ORD&dd1=Nov+07%2C+2026&ADT=1&mon=true&promo=",
+ "at": "2026-11-05T01:05:53Z",
+ "route": "ORD-IAH",
+ "date": "2026-11-04",
+ "error": "Frontier's page layout changed: a journey has no flights list",
+ "status": null,
+ "layout": true,
+ "url": "https://booking.flyfrontier.com/Flight/InternalSelect?o1=ORD&d1=IAH&dd1=Nov+04%2C+2026&ADT=1&mon=true&promo=",
  "page_saved": true
 }
