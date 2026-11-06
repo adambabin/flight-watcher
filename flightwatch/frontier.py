@@ -158,9 +158,11 @@ def _check_layout(data):
         raise _layout_error("no journeys list")
     flights = []
     for j in data["journeys"]:
-        if not isinstance(j, dict) or not isinstance(j.get("flights"), list):
+        # "flights": null (key present) is how Frontier shows a day whose flights have all
+        # departed, e.g. checking today's date late in the evening. A missing key is a redesign.
+        if not isinstance(j, dict) or "flights" not in j or not isinstance(j["flights"], (list, type(None))):
             raise _layout_error("a journey has no flights list")
-        flights += j["flights"]
+        flights += j["flights"] or []
     if not flights:
         return
     if not all(isinstance(f, dict) and isinstance(f.get("legs"), list) for f in flights):
