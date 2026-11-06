@@ -43,6 +43,7 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 - Nonstop means `len(legs) == 1`.
 - The site uses DataDome: one `curl_cffi` Chrome-impersonating session, 4–7 s between requests. HTTP 403/405/406/429 or captcha means `blocked`.
 - **Layout checks** (`_check_layout`): if `journeys`/`flights`/`legs`, or `isGoWildFareEnabled`/`goWildFare` on every flight, are missing, or `FlightData` is gone without a captcha, it raises `FrontierError(layout=True)`. That way a redesign never gets recorded as "no GoWild seats".
+  - `"flights": null` (key present) is **not** a layout change. Frontier sends it for a date whose flights have all departed, e.g. today's date checked late in the evening, and it's treated as no flights. Only a missing `flights` key is a redesign. This false alarm fired once on 2026-11-05 (PR #23).
 - `Frontier.last_page`/`last_url` keep the latest raw response for snapshots.
 - Verified working from GitHub Actions runners on 2026-10-24. At that point Frontier had one nonstop each way: F9 3135 ORD→IAH 7:40 AM, F9 1882 IAH→ORD 11:36 AM.
 
@@ -157,6 +158,7 @@ Done and live on `main`:
 - Mobile dashboard, ticket #11 (PR #15).
 - Release chart in days before departure, ticket #12 (PR #16).
 - Repeated bot blocks raise the failure alarm (PR #17).
+- A day whose flights have all departed (`"flights": null`) no longer raises a false layout alarm (PR #23).
 - Secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are set, and the bot works: the setup check, commands and `/status` were all answered.
 - The user armed `/alert` for Mon Oct 26 flights.
 
