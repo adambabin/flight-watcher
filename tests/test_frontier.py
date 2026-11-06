@@ -91,6 +91,13 @@ def test_a_day_with_no_flights_is_not_a_layout_change():
     assert parse_select_page(page([]))["flights"] == []
 
 
+def test_a_day_whose_flights_have_all_departed_is_not_a_layout_change():
+    # Seen 2026-11-05 at 10 PM CT: checking today's date after the last departure gives
+    # "flights": null. Only a missing key means a redesign.
+    assert parse_select_page(_blob({"journeys": [{"flights": None}],
+                                     "isGoWildOutOfRange": False}))["flights"] == []
+
+
 FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
 
 
