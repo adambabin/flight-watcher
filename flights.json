@@ -840,17 +840,17 @@
   "dep": "2026-11-09T17:06:00",
   "first_seen": "2026-11-06T07:06:37Z",
   "flight": "F9 3136",
-  "last_check": "2026-11-08T22:06:18Z",
+  "last_check": "2026-11-08T23:06:23Z",
   "opened_at": "2026-11-06T07:06:37Z",
   "opened_prev": null,
   "price": 15.41,
   "reopens": 0,
   "route": "IAH-ORD",
-  "seats": 1,
-  "sold_out_at": null,
-  "sold_out_prev": null,
+  "seats": null,
+  "sold_out_at": "2026-11-08T23:06:23Z",
+  "sold_out_prev": "2026-11-08T22:06:18Z",
   "standard": 154.98,
-  "status": "open",
+  "status": "closed",
   "timeline": [
    [
     "2026-11-06T07:06:37Z",
@@ -876,6 +876,11 @@
     "2026-11-08T22:06:18Z",
     "open",
     1
+   ],
+   [
+    "2026-11-08T23:06:23Z",
+    "closed",
+    null
    ]
   ]
  },
@@ -885,7 +890,7 @@
   "dep": "2026-11-09T13:04:00",
   "first_seen": "2026-11-06T07:06:10Z",
   "flight": "F9 3135",
-  "last_check": "2026-11-08T22:05:57Z",
+  "last_check": "2026-11-08T23:05:58Z",
   "opened_at": "2026-11-07T21:06:05Z",
   "opened_prev": "2026-11-07T20:10:13Z",
   "price": 15.41,
