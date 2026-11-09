@@ -2447,3 +2447,11 @@
 {"date": "2026-11-10", "itineraries": 7, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-09T22:06:24Z"}
 {"date": "2026-11-11", "itineraries": 8, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-09T22:06:30Z"}
 {"date": "2026-11-12", "itineraries": 14, "mode": "tick", "nonstop": [{"arr": "2026-11-12T19:59:00", "dep": "2026-11-12T17:06:00", "flight": "F9 1882", "gowild": true, "price": 78.99, "seats": 1, "standard": 154.98}], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-09T22:06:38Z"}
+{"date": "2026-11-09", "itineraries": 1, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "ORD-IAH", "ts": "2026-11-09T23:05:52Z"}
+{"date": "2026-11-10", "itineraries": 5, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "ORD-IAH", "ts": "2026-11-09T23:06:00Z"}
+{"date": "2026-11-11", "itineraries": 6, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "ORD-IAH", "ts": "2026-11-09T23:06:06Z"}
+{"date": "2026-11-12", "itineraries": 13, "mode": "tick", "nonstop": [{"arr": "2026-11-12T16:11:00", "dep": "2026-11-12T13:04:00", "flight": "F9 3135", "gowild": true, "price": 78.99, "seats": null, "standard": 154.98}], "out_of_range": false, "route": "ORD-IAH", "ts": "2026-11-09T23:06:12Z"}
+{"date": "2026-11-09", "itineraries": 2, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-09T23:06:18Z"}
+{"date": "2026-11-10", "itineraries": 7, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-09T23:06:25Z"}
+{"date": "2026-11-11", "itineraries": 8, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-09T23:06:31Z"}
+{"date": "2026-11-12", "itineraries": 14, "mode": "tick", "nonstop": [{"arr": "2026-11-12T19:59:00", "dep": "2026-11-12T17:06:00", "flight": "F9 1882", "gowild": true, "price": 78.99, "seats": 1, "standard": 154.98}], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-09T23:06:36Z"}
