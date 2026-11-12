@@ -13,18 +13,18 @@
   "2026-11-06T03:05:58Z",
   "2026-11-09T11:05:55Z"
  ],
- "digest_sent": "2026-11-11",
+ "digest_sent": "2026-11-12",
  "health": {
   "blocked": false,
   "fail_streak": 0,
   "first_fail": null,
   "last_block": null,
   "last_error": null,
-  "last_ok": "2026-11-12T11:50:12Z",
+  "last_ok": "2026-11-12T12:06:41Z",
   "notified": null,
   "sample_saved": "2026-11-10T02:06:12Z"
  },
- "last_check": "2026-11-12T11:50:12Z",
+ "last_check": "2026-11-12T12:06:41Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
