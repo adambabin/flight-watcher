@@ -1020,7 +1020,7 @@
   "dep": "2026-11-13T17:06:00",
   "first_seen": "2026-11-10T07:06:37Z",
   "flight": "F9 3136",
-  "last_check": "2026-11-12T21:06:24Z",
+  "last_check": "2026-11-12T22:06:28Z",
   "opened_at": "2026-11-10T07:06:37Z",
   "opened_prev": null,
   "price": 15.41,
@@ -1055,7 +1055,7 @@
   "dep": "2026-11-13T13:04:00",
   "first_seen": "2026-11-10T07:06:13Z",
   "flight": "F9 3135",
-  "last_check": "2026-11-12T21:05:58Z",
+  "last_check": "2026-11-12T22:06:01Z",
   "opened_at": "2026-11-11T21:06:08Z",
   "opened_prev": "2026-11-11T20:06:08Z",
   "price": 15.41,
@@ -1064,7 +1064,7 @@
   "seats": null,
   "sold_out_at": null,
   "sold_out_prev": null,
-  "standard": 164.98,
+  "standard": 144.98,
   "status": "open",
   "timeline": [
    [
@@ -1085,7 +1085,7 @@
   "dep": "2026-11-15T17:06:00",
   "first_seen": "2026-11-12T07:06:43Z",
   "flight": "F9 1882",
-  "last_check": "2026-11-12T21:06:36Z",
+  "last_check": "2026-11-12T22:06:44Z",
   "opened_at": null,
   "opened_prev": null,
   "price": null,
@@ -1094,7 +1094,7 @@
   "seats": null,
   "sold_out_at": null,
   "sold_out_prev": null,
-  "standard": 196.98,
+  "standard": 245.98,
   "status": "closed",
   "timeline": [
    [
@@ -1110,7 +1110,7 @@
   "dep": "2026-11-15T13:04:00",
   "first_seen": "2026-11-12T07:06:14Z",
   "flight": "F9 3135",
-  "last_check": "2026-11-12T21:06:11Z",
+  "last_check": "2026-11-12T22:06:15Z",
   "opened_at": null,
   "opened_prev": null,
   "price": null,
