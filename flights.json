@@ -1020,7 +1020,7 @@
   "dep": "2026-11-13T17:06:00",
   "first_seen": "2026-11-10T07:06:37Z",
   "flight": "F9 3136",
-  "last_check": "2026-11-13T04:06:24Z",
+  "last_check": "2026-11-13T07:06:18Z",
   "opened_at": "2026-11-10T07:06:37Z",
   "opened_prev": null,
   "price": 15.41,
@@ -1060,7 +1060,7 @@
   "dep": "2026-11-13T13:04:00",
   "first_seen": "2026-11-10T07:06:13Z",
   "flight": "F9 3135",
-  "last_check": "2026-11-13T04:05:58Z",
+  "last_check": "2026-11-13T07:05:51Z",
   "opened_at": "2026-11-11T21:06:08Z",
   "opened_prev": "2026-11-11T20:06:08Z",
   "price": 15.41,
@@ -1110,7 +1110,7 @@
   "dep": "2026-11-15T17:06:00",
   "first_seen": "2026-11-12T07:06:43Z",
   "flight": "F9 1882",
-  "last_check": "2026-11-13T04:06:39Z",
+  "last_check": "2026-11-13T07:06:32Z",
   "opened_at": null,
   "opened_prev": null,
   "price": null,
@@ -1135,7 +1135,7 @@
   "dep": "2026-11-15T13:04:00",
   "first_seen": "2026-11-12T07:06:14Z",
   "flight": "F9 3135",
-  "last_check": "2026-11-13T04:06:11Z",
+  "last_check": "2026-11-13T07:06:06Z",
   "opened_at": null,
   "opened_prev": null,
   "price": null,
@@ -1149,6 +1149,56 @@
   "timeline": [
    [
     "2026-11-12T07:06:14Z",
+    "closed",
+    null
+   ]
+  ]
+ },
+ "2026-11-16|IAH-ORD|F9 3136": {
+  "arr": "2026-11-16T19:59:00",
+  "date": "2026-11-16",
+  "dep": "2026-11-16T17:06:00",
+  "first_seen": "2026-11-13T07:06:38Z",
+  "flight": "F9 3136",
+  "last_check": "2026-11-13T07:06:38Z",
+  "opened_at": null,
+  "opened_prev": null,
+  "price": null,
+  "reopens": 0,
+  "route": "IAH-ORD",
+  "seats": null,
+  "sold_out_at": null,
+  "sold_out_prev": null,
+  "standard": 144.98,
+  "status": "closed",
+  "timeline": [
+   [
+    "2026-11-13T07:06:38Z",
+    "closed",
+    null
+   ]
+  ]
+ },
+ "2026-11-16|ORD-IAH|F9 3135": {
+  "arr": "2026-11-16T16:11:00",
+  "date": "2026-11-16",
+  "dep": "2026-11-16T13:04:00",
+  "first_seen": "2026-11-13T07:06:13Z",
+  "flight": "F9 3135",
+  "last_check": "2026-11-13T07:06:13Z",
+  "opened_at": null,
+  "opened_prev": null,
+  "price": null,
+  "reopens": 0,
+  "route": "ORD-IAH",
+  "seats": null,
+  "sold_out_at": null,
+  "sold_out_prev": null,
+  "standard": 144.98,
+  "status": "closed",
+  "timeline": [
+   [
+    "2026-11-13T07:06:13Z",
     "closed",
     null
    ]
