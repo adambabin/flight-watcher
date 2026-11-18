@@ -35,3 +35,22 @@ def test_dashboard_reports_failing_checks(state):
     out = dashboard.build(state, app.local_now())
     assert out["health"]["failing"] and out["health"]["failing_since"] == "2026-10-26 09:05"
     assert "layout changed" in out["health"]["last_error"]
+
+
+def test_dashboard_calendar_data(state):
+    clock = Clock(local(2026, 10, 26, 23, 50))
+    app, _, _ = make_app(state, clock, released_at_midnight)
+    app.night()
+    out = dashboard.build(state, app.local_now())
+    assert out["routes"] == ["ORD-IAH", "IAH-ORD"]
+    days = [dict(zip(out["days"]["columns"], r)) for r in out["days"]["rows"]]
+    ord_iah = next(r for r in days if r["Flight"].startswith("F9 1234"))
+    # Closed at the 11:59 PM check, open at 12:01 AM: the timeline keeps both, in local time.
+    assert ord_iah["Opened after"] == "2026-10-26 23:59"
+    assert ord_iah["Timeline"][0][1] == "closed" and ord_iah["Timeline"][-1] == ["2026-10-27 00:01", "open", 2]
+    dates = [dict(zip(out["dates"]["columns"], r)) for r in out["dates"]["rows"]]
+    checked = {(d["Date"], d["Route"]): d for d in dates if d["Route"]}
+    assert checked[("2026-10-28", "ORD-IAH")]["Nonstops"] == 2 and checked[("2026-10-28", "ORD-IAH")]["Checks"] > 0
+    # Blackout dates in the months on screen are listed even though nothing checked them.
+    assert {"Date": "2026-11-24", "Route": None, "Checks": 0, "First check": None, "Last check": None,
+            "Nonstops": 0, "Blackout": True} in dates
