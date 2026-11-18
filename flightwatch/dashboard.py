@@ -10,15 +10,20 @@ import os
 from datetime import date, datetime, timedelta
 
 from .airports import airport_tz
-from .state import HEALTH_ALERT_AFTER
+from .rules import is_blackout
+from .state import HEALTH_ALERT_AFTER, route_key
 from .timeutil import clock, dep_clock, parse_iso
 
 CHECK_DAYS = 14   # departures whose every check is included (the seat-count chart)
 
 DAY_COLUMNS = ["Flight", "Route", "Date", "Weekday", "Departs at", "Released at", "Release known",
                "Release (min after midnight)", "Sold out at", "Hours open", "Max seats seen",
-               "Reopened", "Outcome"]
+               "Reopened", "Outcome", "Opened after", "Sold out after", "GoWild fare", "Standard fare",
+               "Timeline"]
 CHECK_COLUMNS = ["Flight", "Date", "Checked at", "Hours after midnight", "Seats left", "GoWild open"]
+# One row per (departure date, route) that was checked, so the calendar can tell "no nonstop
+# flights that day" apart from "not tracked". Blackout dates are listed even when unchecked.
+DATE_COLUMNS = ["Date", "Route", "Checks", "First check", "Last check", "Nonstops", "Blackout"]
 
 
 def label(num, rkey, dep, arr):
@@ -74,6 +79,12 @@ def _day_row(key, r, fallback_tz, now):
         max(seats) if seats else None,
         r.get("reopens", 0),
         outcome,
+        _stamp(_local(r.get("opened_prev"), tz)),
+        _stamp(_local(r.get("sold_out_prev"), tz)),
+        r.get("price"),
+        r.get("standard"),
+        # Every status change: [local time, "open"/"closed", seats or None].
+        [[_stamp(_local(ts, tz)), st, seats] for ts, st, seats in r.get("timeline", [])],
     ]
 
 
@@ -107,6 +118,30 @@ def _check_rows(state_dir, flights, fallback_tz, keep_dates):
     return rows
 
 
+def _date_rows(state, fallback_tz):
+    nonstops = {}
+    for key in state.flights:
+        dep_day, rkey, _ = key.split("|")
+        nonstops[(dep_day, rkey)] = nonstops.get((dep_day, rkey), 0) + 1
+    rows, seen = [], set()
+    for rec in state.days.values():
+        rkey, dep_day = rec["route"], rec["date"]
+        tz = airport_tz(rkey.split("-")[0], fallback_tz)
+        seen.add(dep_day)
+        rows.append([dep_day, rkey, rec.get("checks", 0), _stamp(_local(rec.get("first_check"), tz)),
+                     _stamp(_local(rec.get("last_check"), tz)), nonstops.get((dep_day, rkey), 0),
+                     is_blackout(date.fromisoformat(dep_day))])
+    # Blackouts across the months on screen, so the calendar can grey them out before any check.
+    if seen:
+        first, last = date.fromisoformat(min(seen)).replace(day=1), date.fromisoformat(max(seen)) + timedelta(days=31)
+        d = first
+        while d <= last:
+            if is_blackout(d) and d.isoformat() not in seen:
+                rows.append([d.isoformat(), None, 0, None, None, 0, True])
+            d += timedelta(days=1)
+    return sorted(rows, key=lambda r: (r[0], r[1] or ""))
+
+
 def _health(state, tz):
     h = state.runtime["health"]
     return {"failing": h["fail_streak"] >= HEALTH_ALERT_AFTER, "fail_streak": h["fail_streak"],
@@ -121,6 +156,9 @@ def build(state, now):
     return {
         "generated_at": now.astimezone(airport_tz("", fallback)).isoformat(timespec="seconds"),
         "days": {"columns": DAY_COLUMNS, "rows": days},
+        "dates": {"columns": DATE_COLUMNS, "rows": _date_rows(state, fallback)},
+        # Routes in the owner's settings order, so the calendar lists them the way they were added.
+        "routes": [route_key(r) for r in state.settings.get("routes", [])],
         "checks": {"columns": CHECK_COLUMNS, "rows": _check_rows(state.path, state.flights, fallback, set(keep))},
         "health": _health(state, airport_tz("", fallback)),
     }

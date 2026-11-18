@@ -94,17 +94,93 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
 }
 @media (prefers-reduced-motion: no-preference) { .first .chart svg { animation: fade .35s ease-out; } @keyframes fade { from { opacity: 0; } } }
 #chart-windows { min-height: 90px; }
+/* Month calendar: both directions per day, one stripe each. */
+.top { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 60rem) { .top { grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); align-items: start; } .top .day-card { position: sticky; top: 12px; } }
+.calhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.calhead .month { font: 400 1.6rem/1.1 var(--serif); margin-right: auto; }
+.calnav { display: flex; gap: 6px; align-items: center; }
+.navbtn { cursor: pointer; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; width: 34px; height: 32px; font-size: 16px; line-height: 1; }
+.navbtn:disabled { opacity: .35; cursor: default; }
+.key { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: 12px; margin-top: 10px; }
+.key span { display: inline-flex; align-items: center; gap: 5px; }
+.sw { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 3px; background: var(--soft); }
+.s-open .sw, .sw.s-open { background: var(--accent-2); }
+.s-sold .sw, .sw.s-sold { background: var(--accent); }
+.s-never .sw, .sw.s-never { background: var(--bad); }
+.s-wait .sw, .sw.s-wait, .s-none .sw, .sw.s-none { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ref); }
+.s-noflight .sw, .sw.s-noflight { background: transparent; box-shadow: inset 0 -1.5px 0 var(--soft); border-radius: 0; height: 6px; }
+.sw.s-blackout { background: repeating-linear-gradient(135deg, var(--soft) 0 2px, transparent 2px 5px); }
+.cal { container-type: inline-size; margin-top: 10px; }
+.cal .wk, .cal .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal .wk div { color: var(--muted); font-size: 12px; text-align: center; padding-bottom: 4px; }
+.cell { position: relative; display: flex; flex-direction: column; gap: 3px; min-height: 74px; padding: 5px 6px 6px; text-align: left; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--panel); min-width: 0; overflow: hidden; }
+.cell.pad { visibility: hidden; }
+.cell.untracked { background: var(--bg); color: var(--muted); }
+.cell.blackout { background: repeating-linear-gradient(135deg, var(--bg) 0 6px, var(--panel) 6px 12px); }
+.cell .dn { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 4px; }
+.cell.today .dn b { color: var(--panel); background: var(--fg); border-radius: 999px; padding: 0 6px; }
+.cell .dn b { font-weight: 600; color: var(--fg); }
+.cell[aria-pressed="true"] { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.st { display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 1.25; white-space: nowrap; min-width: 0; }
+.st .clk { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.st .dd { color: var(--muted); margin-left: auto; flex: none; }
+.st .tx { color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.cell.noflight { background: var(--bg); }
+.cell .nf { color: var(--muted); font-size: 11px; margin-top: auto; line-height: 1.2; }
+.cell .nf .short, .cell .dn .bo-short { display: none; }
+@container (max-width: 30rem) { .cell .nf .long, .cell .dn .bo { display: none; } .cell .nf .short { display: inline; } }
+@container (max-width: 34rem) { .st .clk, .st .tx, .st .ar { display: none; } .st .dd { margin-left: 0; } .cell { min-height: 60px; padding: 4px; } .st .sw { width: 100%; max-width: 14px; } }
+.day-card h2 { font: 400 1.6rem/1.15 var(--serif); }
+.day-card h3 { font-size: 14px; font-weight: 600; margin: 16px 0 6px; display: flex; align-items: center; gap: 6px; }
+.fl { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+.fl:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+.fl .fh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.fl .fh b { font-weight: 600; }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 8px 0 0; font-size: 13px; font-variant-numeric: tabular-nums; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; }
+.facts .sub { color: var(--muted); }
+.strip { position: relative; margin-top: 10px; }
+details.log { margin-top: 6px; font-size: 13px; }
+details.log summary { cursor: pointer; color: var(--muted); }
+details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabular-nums; }
+.section-h { font: 400 1.6rem/1.1 var(--serif); margin: 14px 0 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>GoWild flight history</h1>
-    <p class="take" id="takeaway">Loading the tracker's latest data…</p>
+    <p class="take">When Frontier GoWild seats opened and sold out, day by day.</p>
   </header>
   <div class="meta"><span id="updated">—</span><button class="link" id="reload">Refresh</button><span id="error" class="err" hidden></span></div>
   <div class="alert" id="health" role="status" hidden></div>
 
+  <div class="top">
+    <section class="card" aria-labelledby="cal-h">
+      <h2 id="cal-h">Month view</h2>
+      <p class="note">Each day shows both directions. The time is when GoWild seats appeared; <b>3d</b> means 3 days before departure (1d is the official release, midnight going into the day before). ≤ means seats were already open at the first check. Tap a day for details.</p>
+      <div class="calhead">
+        <span class="month" id="cal-month">—</span>
+        <span class="calnav">
+          <button class="navbtn" id="cal-prev" aria-label="Previous month">‹</button>
+          <select id="cal-pick" aria-label="Month"></select>
+          <button class="navbtn" id="cal-next" aria-label="Next month">›</button>
+        </span>
+        <select id="cal-pair" aria-label="Routes" hidden></select>
+      </div>
+      <div class="key" id="cal-key"></div>
+      <div class="cal" id="cal"></div>
+    </section>
+    <section class="card day-card" id="day" aria-live="polite"></section>
+  </div>
+
+  <div>
+    <h2 class="section-h">Trends by flight</h2>
+    <p class="take" id="takeaway">Loading the tracker's latest data…</p>
+  </div>
   <nav class="picker" id="flights" aria-label="Flight"></nav>
 
   <section class="tiles" aria-label="Summary for the chosen flight">
@@ -164,8 +240,8 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
   const $ = (s) => document.querySelector(s);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } } };
 
-  let days = [], checks = [], generatedAt = null;
-  const ui = { flight: store.get('gw-flight'), weekday: null, day: null };
+  let days = [], checks = [], dates = [], routesCfg = [], generatedAt = null;
+  const ui = { flight: store.get('gw-flight'), weekday: null, day: null, cal: null, month: null, pair: store.get('gw-pair') };
 
   // "2026-10-25 23:58" is local wall time at the origin; parse it as UTC so arithmetic and labels stay in that wall time.
   const wall = (s) => (s ? new Date(s.replace(' ', 'T') + ':00Z') : null);
@@ -239,7 +315,8 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
       return p.route.localeCompare(q.route) || depMin(p.times) - depMin(q.times) || a.localeCompare(b);
     });
   }
-  function currentFlight() { const all = flightsList(); return all.includes(ui.flight) ? ui.flight : all[0]; }
+  // Default to the flight with the most tracked days (the list is sorted by route and time, not by usefulness).
+  function currentFlight() { const all = flightsList(); return all.includes(ui.flight) ? ui.flight : d3.greatest(all, (f) => days.filter((r) => r.Flight === f && r['Released at']).length); }
   function rowsFor(flight) { return days.filter((r) => r.Flight === flight && (!ui.weekday || r.Weekday === ui.weekday)); }
 
   function drawPicker(flight) {
@@ -467,9 +544,257 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
     }));
   }
 
+  // ---- Month view: one calendar, both directions of a route pair per day. ----
+  const STATES = {
+    open: 'Open', sold: 'Sold out', wait: 'Not open yet', none: 'No seats seen', never: 'Never opened',
+    noflight: 'No nonstop', blackout: 'Blackout', untracked: 'Not tracked',
+  };
+  const stateOf = (o) => (o.startsWith('Open') ? 'open' : o === 'Sold out' ? 'sold' : o === 'Not open yet' ? 'wait' : o === 'Never opened' ? 'never' : 'none');
+  const RANK = ['open', 'sold', 'wait', 'none', 'never'];
+  const isoDay = (d) => d.toISOString().slice(0, 10);
+  const fmtLong = d3.utcFormat('%A, %B %-d');
+  const fmtDate = (s) => { const d = wall(s); return d ? `${d3.utcFormat('%a %b %-d')(d)}, ${clockOf(d)}` : '—'; };
+  const arrow = (rk) => rk.replace('-', ' → ');
+  const money = (v) => (v == null ? null : `$${(+v).toFixed(2)}`);
+
+  function routePairs() {
+    const seen = [...routesCfg, ...days.map((r) => r.Route), ...dates.map((r) => r.Route).filter(Boolean)];
+    const all = [...new Set(seen)], used = new Set(), pairs = [];
+    all.forEach((rk) => {
+      if (used.has(rk)) return;
+      const back = rk.split('-').reverse().join('-');
+      const p = all.includes(back) ? [rk, back] : [rk];
+      p.forEach((x) => used.add(x)); pairs.push(p);
+    });
+    return pairs;
+  }
+  function currentPair() { const ps = routePairs(); return ps.find((p) => p.join('|') === ui.pair) || ps[0] || []; }
+
+  // What one direction looked like on one departure date.
+  function routeDay(date, rk) {
+    const fl = days.filter((r) => r.Date === date && r.Route === rk).sort((a, b) => (a['Departs at'] < b['Departs at'] ? -1 : 1));
+    const info = dates.find((r) => r.Date === date && r.Route === rk);
+    const blackout = dates.some((r) => r.Date === date && r.Blackout);
+    if (fl.length) {
+      const st = RANK[Math.min(...fl.map((r) => RANK.indexOf(stateOf(r.Outcome))))];
+      const opened = fl.filter((r) => r['Released at']).sort((a, b) => hoursBefore(b) - hoursBefore(a))[0];
+      return { state: st, flights: fl, info, blackout, opened };
+    }
+    if (blackout) return { state: 'blackout', flights: [], info, blackout };
+    if (info && info.Checks) return { state: 'noflight', flights: [], info, blackout };
+    return { state: 'untracked', flights: [], info, blackout };
+  }
+
+  function monthsAvailable() {
+    const ds = [...days.map((r) => r.Date), ...dates.filter((r) => r.Checks).map((r) => r.Date)].sort();
+    if (!ds.length) return [];
+    const out = [];
+    for (let m = d3.utcMonth.floor(dayDate(ds[0])); m <= dayDate(ds[ds.length - 1]); m = d3.utcMonth.offset(m, 1)) out.push(isoDay(m).slice(0, 7));
+    return out;
+  }
+  const todayIso = () => isoDay(nowWall());
+  function defaultDay() {
+    const ds = [...new Set(days.map((r) => r.Date))].sort();
+    const t = todayIso();
+    return ds.find((d) => d >= t) || ds[ds.length - 1] || t;
+  }
+
+  function stripe(rd, rk) {
+    const el = document.createElement('span'); el.className = `st s-${rd.state}`;
+    const sw = document.createElement('i'); sw.className = 'sw';
+    el.append(sw);
+    if (rd.opened) {
+      const h = hoursBefore(rd.opened), d = Math.ceil(h / 24 - 1e-9), r = relDay(h);
+      const c = document.createElement('span'); c.className = 'clk'; c.textContent = (rd.opened['Release known'] ? '' : '≤') + r.clock.replace(' AM', 'a').replace(' PM', 'p');
+      const dd = document.createElement('span'); dd.className = 'dd'; dd.textContent = d <= 0 ? '0d' : `${d}d`;
+      el.append(c, dd);
+    } else if (rd.state !== 'untracked' && rd.state !== 'blackout') {
+      const t = document.createElement('span'); t.className = 'tx'; t.textContent = { wait: 'not yet', none: 'none seen', never: 'never', noflight: '—' }[rd.state] || '';
+      el.append(t);
+    }
+    return el;
+  }
+
+  function cellLabel(date, pair, rds) {
+    return `${fmtLong(dayDate(date))}. ` + pair.map((rk, i) => {
+      const rd = rds[i];
+      const rel = rd.opened ? `, seats appeared ${relDay(hoursBefore(rd.opened)).clock} ${relDay(hoursBefore(rd.opened)).text}` : '';
+      return `${arrow(rk)}: ${STATES[rd.state]}${rel}`;
+    }).join('. ');
+  }
+
+  function drawCalendar() {
+    const months = monthsAvailable(), pair = currentPair();
+    const el = $('#cal');
+    if (!months.length) { $('#cal-month').textContent = '—'; return empty(el, 'Nothing tracked yet'); }
+    if (!months.includes(ui.month)) ui.month = (ui.cal || defaultDay()).slice(0, 7);
+    if (!months.includes(ui.month)) ui.month = months[months.length - 1];
+    const i = months.indexOf(ui.month), first = dayDate(ui.month + '-01');
+    $('#cal-month').textContent = d3.utcFormat('%B %Y')(first);
+    $('#cal-prev').disabled = i <= 0; $('#cal-next').disabled = i >= months.length - 1;
+    const pick = $('#cal-pick');
+    pick.replaceChildren(...months.map((m) => new Option(d3.utcFormat('%b %Y')(dayDate(m + '-01')), m)));
+    pick.value = ui.month; pick.hidden = months.length < 2;
+    const pairs = routePairs(), ps = $('#cal-pair');
+    ps.hidden = pairs.length < 2;
+    ps.replaceChildren(...pairs.map((p) => new Option(p.map(arrow).join(' / '), p.join('|'))));
+    ps.value = pair.join('|');
+
+    const key = $('#cal-key'); key.replaceChildren();
+    const k = (cls, text) => { const s = document.createElement('span'); const w = document.createElement('i'); w.className = `sw s-${cls}`; s.append(w, text); return s; };
+    const dirs = document.createElement('span'); dirs.textContent = pair.map((rk, j) => `${j ? 'Bottom' : 'Top'} line: ${arrow(rk)}`).join(' · ');
+    key.append(dirs, k('open', 'Open'), k('sold', 'Sold out'), k('never', 'Never opened'), k('wait', 'Not yet / none seen'), k('noflight', 'No nonstop'), k('blackout', 'Blackout'));
+
+    const wk = document.createElement('div'); wk.className = 'wk'; wk.setAttribute('aria-hidden', 'true');
+    wk.append(...['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => Object.assign(document.createElement('div'), { textContent: d })));
+    const grid = document.createElement('div'); grid.className = 'days';
+    for (let p = 0; p < first.getUTCDay(); p++) grid.append(Object.assign(document.createElement('div'), { className: 'cell pad' }));
+    const today = todayIso();
+    for (let d = first; d < d3.utcMonth.offset(first, 1); d = d3.utcDay.offset(d, 1)) {
+      const date = isoDay(d), rds = pair.map((rk) => routeDay(date, rk));
+      const b = document.createElement('button'); b.className = 'cell';
+      if (rds.every((r) => r.state === 'untracked')) b.classList.add('untracked');
+      if (rds.some((r) => r.blackout)) b.classList.add('blackout');
+      if (date === today) b.classList.add('today');
+      b.setAttribute('aria-pressed', String(date === ui.cal));
+      b.setAttribute('aria-label', cellLabel(date, pair, rds));
+      const dn = document.createElement('span'); dn.className = 'dn';
+      const n = document.createElement('b'); n.textContent = d.getUTCDate(); dn.append(n);
+      if (rds.some((r) => r.blackout)) dn.append(Object.assign(document.createElement('span'), { className: 'bo', textContent: 'BO', title: 'GoWild blackout' }));
+      b.append(dn);
+      if (rds.every((r) => r.state === 'noflight')) { b.classList.add('noflight'); const nf = document.createElement('span'); nf.className = 'nf'; nf.title = 'No nonstop flights';
+        nf.append(Object.assign(document.createElement('span'), { className: 'long', textContent: 'No nonstop' }), Object.assign(document.createElement('span'), { className: 'short', textContent: '—' }));
+        b.append(nf);
+      }
+      else if (!rds.every((r) => r.state === 'untracked' || (r.state === 'blackout' && !r.info))) rds.forEach((rd, j) => b.append(stripe(rd, pair[j])));
+      b.addEventListener('click', () => {
+        ui.cal = date; setHash(); drawCalendar(); drawDay();
+        const card = $('#day'), r = card.getBoundingClientRect();
+        if (r.top > window.innerHeight - 80 || r.bottom < 0) card.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      });
+      grid.append(b);
+    }
+    el.replaceChildren(wk, grid);
+  }
+
+  // Open/closed spans from the flight's status changes, up to departure (or now, if it hasn't left).
+  function segments(r) {
+    const tl = (r.Timeline || []).map(([t, st, seats]) => ({ t: wall(t), st, seats }));
+    const end = r['Departs at'] ? new Date(Math.min(wall(r['Departs at']), nowWall())) : nowWall();
+    return tl.map((e, i) => ({ ...e, a: e.t, b: i + 1 < tl.length ? tl[i + 1].t : end })).filter((s) => s.b > s.a);
+  }
+
+  function drawStrip(host, r) {
+    const segs = segments(r);
+    if (!segs.length) return;
+    const el = document.createElement('div'); el.className = 'chart strip'; el.style.minHeight = '0';
+    host.append(el);
+    const W = el.clientWidth || 360, H = 46, M = { t: 6, r: 8, b: 20, l: 8 };
+    const dep = r['Departs at'] ? wall(r['Departs at']) : segs[segs.length - 1].b;
+    const x = d3.scaleUtc([segs[0].a, new Date(Math.max(dep, segs[segs.length - 1].b))], [M.l, W - M.r]);
+    const svg = svgIn(el, W, H, `GoWild open and closed times for ${r.Flight}`);
+    const mids = d3.utcDay.range(d3.utcDay.ceil(x.domain()[0]), x.domain()[1]);
+    svg.append('g').selectAll('line').data(mids).join('line').attr('x1', x).attr('x2', x).attr('y1', M.t - 2).attr('y2', H - M.b + 2).attr('stroke', 'var(--line)');
+    svg.append('g').selectAll('text').data(mids.filter((m, i) => mids.length <= 5 || i % 2 === 0)).join('text').attr('x', (m) => x(m) + 3).attr('y', H - 5).text(d3.utcFormat('%a'));
+    svg.append('line').attr('x1', M.l).attr('x2', W - M.r).attr('y1', (M.t + H - M.b) / 2).attr('y2', (M.t + H - M.b) / 2).attr('stroke', 'var(--soft)').attr('stroke-width', 2);
+    const open = segs.filter((s) => s.st === 'open');
+    const bars = svg.append('g').selectAll('rect').data(open).join('rect')
+      .attr('x', (s) => x(s.a)).attr('width', (s) => Math.max(3, x(s.b) - x(s.a) - 2)).attr('y', M.t).attr('height', H - M.b - M.t).attr('rx', 3)
+      .attr('fill', 'var(--accent-2)').style('cursor', 'pointer');
+    if (r['Departs at'] && dep <= x.domain()[1]) {
+      svg.append('line').attr('x1', x(dep)).attr('x2', x(dep)).attr('y1', M.t - 3).attr('y2', H - M.b + 3).attr('stroke', 'var(--fg)').attr('stroke-width', 2);
+    }
+    tips(el, 'strip:' + r.Flight + r.Date, bars, {
+      key: (s) => +s.a,
+      anchor: (s) => [x(s.a) + (x(s.b) - x(s.a)) / 2, M.t],
+      content: (s) => [`GoWild open · ${spanH((s.b - s.a) / 36e5) || '<1 h'}`, [`${fmtDate(isoStamp(s.a))} → ${fmtDate(isoStamp(s.b))}`, s.seats != null ? `${s.seats} seat${s.seats === 1 ? '' : 's'} left` : 'Seats available (no count shown)']],
+    });
+  }
+  const isoStamp = (d) => d.toISOString().slice(0, 16).replace('T', ' ');
+
+  function flightBlock(r) {
+    const box = document.createElement('div'); box.className = 'fl';
+    const { no, times } = parts(r.Flight);
+    const fh = document.createElement('div'); fh.className = 'fh';
+    const nb = document.createElement('b'); nb.textContent = no;
+    const pill = document.createElement('span'); pill.className = 'pill ' + ({ open: 'open', sold: 'sold', never: 'none' }[stateOf(r.Outcome)] || ''); pill.textContent = r.Outcome;
+    fh.append(nb, times || '', pill);
+    box.append(fh);
+    const dl = document.createElement('dl'); dl.className = 'facts';
+    const fact = (k, v, sub) => {
+      const dt = document.createElement('dt'); dt.textContent = k;
+      const dd = document.createElement('dd'); dd.textContent = v;
+      if (sub) { const s = document.createElement('div'); s.className = 'sub'; s.textContent = sub; dd.append(s); }
+      dl.append(dt, dd);
+    };
+    if (r['Released at']) {
+      const rel = relDay(hoursBefore(r));
+      if (r['Release known']) fact('Released', fmtDate(r['Released at']), `${rel.text}${r['Opened after'] ? ` · was still closed at ${clockOf(wall(r['Opened after']))}` : ''}`);
+      else fact('Released', `By ${fmtDate(r['Released at'])}`, `already open at the first check (${rel.text}), so it opened earlier`);
+      if (r['Sold out at']) fact('Sold out', fmtDate(r['Sold out at']), r['Sold out after'] ? `last seen open ${clockOf(wall(r['Sold out after']))}` : null);
+      else fact('Sold out', r.Outcome === 'Open now' ? 'Not yet, seats still open' : 'Never, still open at departure');
+      const segs = segments(r), openH = d3.sum(segs.filter((s) => s.st === 'open'), (s) => (s.b - s.a) / 36e5);
+      const windows = segs.filter((s, i) => s.st === 'open' && (i === 0 || segs[i - 1].st !== 'open')).length;
+      fact('Open for', `${spanH(openH) || '<1 h'}${windows > 1 ? ` across ${windows} windows` : ''}`, r.Reopened ? `sold out and came back ${r.Reopened}×` : null);
+      if (r['Max seats seen'] != null) fact('Most seats', String(r['Max seats seen']));
+      const fare = [money(r['GoWild fare']) && `${money(r['GoWild fare'])} GoWild`, money(r['Standard fare']) && `${money(r['Standard fare'])} standard`].filter(Boolean).join(' · ');
+      if (fare) fact('Fare', fare);
+    } else {
+      fact('GoWild', r.Outcome === 'Not open yet' ? 'Not open yet' : r.Outcome === 'Never opened' ? 'Never opened: no GoWild seats at any check' : 'No GoWild seats seen while tracked');
+      if (money(r['Standard fare'])) fact('Fare', `${money(r['Standard fare'])} standard`);
+    }
+    box.append(dl);
+    drawStrip(box, r);
+    const tl = r.Timeline || [];
+    if (tl.length > 1) {
+      const det = document.createElement('details'); det.className = 'log';
+      const sum = document.createElement('summary'); sum.textContent = `Every change (${tl.length})`;
+      const ol = document.createElement('ol');
+      tl.forEach(([t, st, seats], i) => {
+        const li = document.createElement('li');
+        li.textContent = `${fmtDate(t)}: ${i === 0 ? 'first check, ' : ''}${st === 'open' ? (seats != null ? `${seats} seat${seats === 1 ? '' : 's'} left` : 'open') : (i === 0 ? 'no GoWild seats' : 'sold out')}`;
+        ol.append(li);
+      });
+      det.append(sum, ol); box.append(det);
+    }
+    const go = document.createElement('button'); go.className = 'link'; go.style.marginTop = '8px'; go.textContent = 'Trends for this flight ↓';
+    go.addEventListener('click', () => { ui.flight = r.Flight; ui.weekday = null; ui.day = r.Date; store.set('gw-flight', r.Flight); draw(); $('#flights').scrollIntoView({ behavior: 'smooth' }); });
+    box.append(go);
+    return box;
+  }
+
+  function drawDay() {
+    const el = $('#day'), date = ui.cal, pair = currentPair();
+    el.replaceChildren();
+    const h = document.createElement('h2'); h.textContent = fmtLong(dayDate(date)); el.append(h);
+    const rds = pair.map((rk) => routeDay(date, rk));
+    const note = document.createElement('p'); note.className = 'note';
+    const ahead = date > todayIso();
+    note.textContent = rds.some((r) => r.blackout) ? 'GoWild blackout date: Frontier sells no GoWild fares for it.' : ahead ? 'Upcoming departure.' : '';
+    if (note.textContent) el.append(note);
+    rds.forEach((rd, i) => {
+      const h3 = document.createElement('h3');
+      const sw = document.createElement('i'); sw.className = `sw s-${rd.state}`;
+      h3.append(sw, arrow(pair[i]));
+      el.append(h3);
+      if (rd.flights.length) { rd.flights.forEach((r) => el.append(flightBlock(r))); return; }
+      const p = document.createElement('p'); p.className = 'note';
+      const inf = rd.info;
+      p.textContent = rd.state === 'noflight' || (inf && inf.Checks)
+        ? `No nonstop flights listed. Checked ${inf.Checks} times, ${fmtDate(inf['First check'])} to ${fmtDate(inf['Last check'])}.`
+        : rd.state === 'blackout' ? 'Not checked (blackout).' : 'Not tracked on this date.';
+      el.append(p);
+    });
+  }
+
+  function setHash() { try { history.replaceState(null, '', '#' + ui.cal); } catch (e) { /* sandboxed */ } }
+  function readHash() { const m = /^#(\d{4}-\d{2}-\d{2})$/.exec(location.hash); if (m) { ui.cal = m[1]; ui.month = m[1].slice(0, 7); } }
+
   function draw() {
     if (!days.length) return;
     const flight = currentFlight();
+    if (!ui.cal) ui.cal = defaultDay();
+    drawCalendar(); drawDay();
     drawPicker(flight); drawSummary(flight); drawWindows(flight); drawRelease(flight); drawWeekday(flight); drawSeats(flight); drawTable(flight);
   }
 
@@ -481,7 +806,7 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json();
       const firstData = !days.length;
-      days = table(j.days); checks = table(j.checks); generatedAt = j.generated_at;
+      days = table(j.days); checks = table(j.checks); dates = j.dates ? table(j.dates) : []; routesCfg = j.routes || []; generatedAt = j.generated_at;
       document.body.classList.toggle('first', firstData);
       if (firstData) setTimeout(() => document.body.classList.remove('first'), 600);
       const g = new Date(j.generated_at);
@@ -503,6 +828,13 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
   }
 
   $('#reload').addEventListener('click', load);
+  const toMonth = (step) => { const ms = monthsAvailable(), i = ms.indexOf(ui.month) + step; if (ms[i]) { ui.month = ms[i]; drawCalendar(); } };
+  $('#cal-prev').addEventListener('click', () => toMonth(-1));
+  $('#cal-next').addEventListener('click', () => toMonth(1));
+  $('#cal-pick').addEventListener('change', (e) => { ui.month = e.target.value; drawCalendar(); });
+  $('#cal-pair').addEventListener('change', (e) => { ui.pair = e.target.value; store.set('gw-pair', ui.pair); drawCalendar(); drawDay(); });
+  window.addEventListener('hashchange', () => { readHash(); if (days.length) { drawCalendar(); drawDay(); } });
+  readHash();
   $('#clear-weekday').addEventListener('click', () => { ui.weekday = null; draw(); });
   $('#seat-day').addEventListener('change', (e) => { ui.day = e.target.value; draw(); });
   let lastW = window.innerWidth;
