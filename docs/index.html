@@ -12,17 +12,17 @@
 /* Layout: one column of cards under a sticky flight picker; two-up grid when wide. */
 :root {
   --bg: #f6f7f9; --panel: #ffffff; --fg: #17202b; --muted: #5d6877; --line: #dfe3e8;
-  --accent: #1f6feb; --accent-2: #12a37f; --soft: #c9d1db; --ref: #9aa5b2; --bad: #c93c37;
+  --accent: #1f6feb; --accent-2: #12a37f; --soft: #c9d1db; --ref: #9aa5b2; --bad: #c93c37; --dir-0: #1f6feb; --dir-1: #c96f00;
   --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
   --sans: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --radius: 10px; color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0f141a; --panel: #161d25; --fg: #e8edf2; --muted: #95a1b0; --line: #2a3440;
-  --accent: #5b9dff; --accent-2: #3ccfa6; --soft: #33404e; --ref: #66727f; --bad: #ff7b72; color-scheme: dark; } }
+  --accent: #5b9dff; --accent-2: #3ccfa6; --soft: #33404e; --ref: #66727f; --bad: #ff7b72; --dir-0: #4a8af0; --dir-1: #bf7a1c; color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #0f141a; --panel: #161d25; --fg: #e8edf2; --muted: #95a1b0; --line: #2a3440;
-  --accent: #5b9dff; --accent-2: #3ccfa6; --soft: #33404e; --ref: #66727f; --bad: #ff7b72; color-scheme: dark; }
+  --accent: #5b9dff; --accent-2: #3ccfa6; --soft: #33404e; --ref: #66727f; --bad: #ff7b72; --dir-0: #4a8af0; --dir-1: #bf7a1c; color-scheme: dark; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -93,7 +93,6 @@ tbody tr[aria-selected="true"] td { background: var(--bg); font-weight: 600; }
   .pill { border-radius: 8px; padding: 1px 6px; }
 }
 @media (prefers-reduced-motion: no-preference) { .first .chart svg { animation: fade .35s ease-out; } @keyframes fade { from { opacity: 0; } } }
-#chart-windows { min-height: 90px; }
 /* Month calendar: both directions per day, one stripe each. */
 .top { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 60rem) { .top { grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); align-items: start; } .top .day-card { position: sticky; top: 12px; } }
@@ -147,6 +146,24 @@ details.log { margin-top: 6px; font-size: 13px; }
 details.log summary { cursor: pointer; color: var(--muted); }
 details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabular-nums; }
 .section-h { font: 400 1.6rem/1.1 var(--serif); margin: 14px 0 0; }
+.pair { display: grid; gap: 16px 24px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); margin-top: 8px; }
+.sub-h { font-size: 14px; font-weight: 600; margin: 8px 0 0; display: flex; align-items: center; gap: 6px; }
+.seg .link[aria-pressed="true"] { border-color: var(--fg); color: var(--fg); font-weight: 600; }
+.dir-0 { --dir: var(--dir-0); } .dir-1 { --dir: var(--dir-1); }
+.dirdot { display: inline-block; width: 10px; height: 10px; border-radius: 999px; background: var(--dir); flex: none; }
+#summary td, #summary th { white-space: normal; }
+#summary tbody tr { cursor: default; }
+.wg { display: grid; grid-template-columns: 4.2rem repeat(7, minmax(0, 1fr)); gap: 3px; margin-top: 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.wg .h { color: var(--muted); text-align: center; padding-bottom: 2px; }
+.wg .wl { color: var(--muted); align-self: center; white-space: nowrap; }
+.wg .c { position: relative; border: 1px solid var(--line); border-radius: 6px; min-height: 34px; display: flex; align-items: center; justify-content: center; background: var(--panel); color: var(--fg); cursor: pointer; padding: 0; font: inherit; }
+.wg .c::before { content: ""; position: absolute; inset: 0; border-radius: 5px; background: var(--accent-2); opacity: var(--a, 0); }
+.wg .c span { position: relative; }
+.wg .c.nf { background: var(--bg); color: var(--muted); cursor: default; }
+.wg .c.bo { background: repeating-linear-gradient(135deg, var(--bg) 0 4px, var(--panel) 4px 8px); color: var(--muted); }
+.wg .c.never span { color: var(--bad); font-weight: 600; }
+.wg .c.live span { font-style: italic; }
+.wg .c.sel { box-shadow: inset 0 0 0 2px var(--fg); }
 </style>
 </head>
 <body>
@@ -178,52 +195,40 @@ details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabu
   </div>
 
   <div>
-    <h2 class="section-h">Trends by flight</h2>
-    <p class="take" id="takeaway">Loading the tracker's latest data…</p>
+    <h2 class="section-h">Trends</h2>
+    <p class="take">Both directions, every nonstop that day. Times are local to the departure airport.</p>
   </div>
-  <nav class="picker" id="flights" aria-label="Flight"></nav>
 
-  <section class="tiles" aria-label="Summary for the chosen flight">
-    <div class="tile"><div class="k">Typical release</div><div class="v" id="t-typical">—</div><div class="n" id="n-typical">median, when seen opening</div></div>
-    <div class="tile"><div class="k">Earliest seen open</div><div class="v" id="t-earliest">—</div><div class="n" id="n-earliest">set your alarm by this</div></div>
-    <div class="tile"><div class="k">Nights with seats</div><div class="v" id="t-nights">—</div><div class="n">of finished departures</div></div>
-    <div class="tile"><div class="k">Most seats seen</div><div class="v" id="t-seats">—</div><div class="n">average per departure</div></div>
+  <section class="card" aria-labelledby="sum-h">
+    <h2 id="sum-h">At a glance</h2>
+    <p class="note">Finished departures only. "First seen" uses only releases the tracker caught happening (it was watching while seats were still closed); "3d before" means 3 days before departure.</p>
+    <div class="tablewrap"><table id="summary"></table></div>
   </section>
 
-  <div class="grid">
-    <section class="card wide">
-      <h2>Open window each night</h2>
-      <p class="note">Each bar runs from when GoWild seats showed up to when they sold out (or now, if still open). The tick is departure. Tap a bar for exact times.</p>
-      <div class="bar"><button class="link" id="clear-weekday" hidden></button></div>
-      <div class="chart" id="chart-windows"></div>
-    </section>
-    <section class="card">
-      <h2>What time seats appeared</h2>
-      <p class="note">How long before the departure date seats showed up. 1 d is midnight going into the day before, when GoWild is supposed to open; higher means earlier. Hollow dots were already open at the first check, so the real release was earlier still.</p>
-      <div class="chart" id="chart-release"></div>
-    </section>
-    <section class="card">
-      <h2>Week over week</h2>
-      <p class="note">Average hours seats stayed open, by departure weekday. Tap a day to filter the page.</p>
-      <div class="chart" id="chart-weekday"></div>
-    </section>
-    <section class="card wide">
-      <h2>Seats left through one departure</h2>
-      <p class="note">Every check, by hours after the release-night midnight. "Open" means seats were available but Frontier didn't show a count. Tap or drag across the chart to read each check.</p>
-      <div class="bar"><label class="note" for="seat-day">Departure</label><select id="seat-day"></select></div>
-      <div class="chart" id="chart-seats"></div>
-    </section>
-    <section class="card wide">
-      <h2>Day by day</h2>
-      <p class="note">Newest first. Times are in the departure airport's time zone. Tap a row to see its seat checks.</p>
-      <div class="tablewrap">
-        <table id="day-table">
-          <thead><tr><th>Departs</th><th>GoWild opened</th><th>Sold out</th><th class="num">Hours open</th><th class="num hide-narrow">Most seats</th><th>Status</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+  <section class="card" aria-labelledby="tl-h">
+    <h2 id="tl-h">Day by day</h2>
+    <p class="note">One row per departure. Green bars are when GoWild seats were open; the dark tick is departure; the thin line is when the tracker was watching. A bar with a dotted left end was already open when watching began. Tap a row to open that day above.</p>
+    <div class="bar seg" role="group" aria-label="Row order">
+      <button class="link" data-order="date" aria-pressed="true">Newest first</button>
+      <button class="link" data-order="weekday" aria-pressed="false">Group by weekday</button>
+    </div>
+    <div class="pair" id="timelines"></div>
+  </section>
+
+  <section class="card" aria-labelledby="wk-h">
+    <h2 id="wk-h">Week over week</h2>
+    <p class="note">Each point is one week of departures (Mon–Sun). Hours open counts every window, including seats that came back; a departure that never opened counts as 0. A hollow point is the current week, still in progress.</p>
+    <div class="pair">
+      <div><h3 class="sub-h">Hours open per departure</h3><div class="chart" id="wk-hours"></div></div>
+      <div><h3 class="sub-h">Departures that got seats</h3><div class="chart" id="wk-share"></div></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="grid-h">
+    <h2 id="grid-h">Weekday × week</h2>
+    <p class="note">Hours GoWild seats were open for each departure; darker means longer. 0 = never opened, — = no nonstop, + = still open, ? = tracking started too late to tell. Tap a cell to open that day above.</p>
+    <div class="pair" id="grids"></div>
+  </section>
 </div>
 
 <script>
@@ -236,12 +241,11 @@ details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabu
       ? `https://raw.githubusercontent.com/${owner}/${repo}/state/dashboard.json`
       : 'https://raw.githubusercontent.com/adambabin/flight-watcher/state/dashboard.json';
   })();
-  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const $ = (s) => document.querySelector(s);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } } };
 
-  let days = [], checks = [], dates = [], routesCfg = [], generatedAt = null;
-  const ui = { flight: store.get('gw-flight'), weekday: null, day: null, cal: null, month: null, pair: store.get('gw-pair') };
+  let days = [], dates = [], routesCfg = [], generatedAt = null;
+  const ui = { cal: null, month: null, pair: store.get('gw-pair'), order: store.get('gw-order') === 'weekday' ? 'weekday' : 'date' };
 
   // "2026-10-25 23:58" is local wall time at the origin; parse it as UTC so arithmetic and labels stay in that wall time.
   const wall = (s) => (s ? new Date(s.replace(' ', 'T') + ':00Z') : null);
@@ -250,8 +254,6 @@ details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabu
   const clockOf = (d) => { const h = d.getUTCHours(); return `${h % 12 || 12}:${String(d.getUTCMinutes()).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
   const when = (s) => { const d = wall(s); return d ? `${d3.utcFormat('%a')(d)} ${clockOf(d)}` : '—'; };
   const clockMin = (m) => { const t = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(t / 60); return `${h % 12 || 12}:${String(t % 60).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
-  const tickH = (h) => { const t = ((h % 24) + 24) % 24; return t === 0 ? '12 AM' : t === 12 ? '12 PM' : `${t % 12} ${t < 12 ? 'AM' : 'PM'}`; };
-  const hoursFromMidnight = (s, dep) => (wall(s) - (dayDate(dep) - 864e5)) / 36e5;
   // Release timing is measured back from midnight at the start of the departure date: 24 h = midnight going into the
   // day before (the official GoWild release), 61 h = 11 AM three days before.
   const hoursBefore = (r) => (dayDate(r.Date) - wall(r['Released at'])) / 36e5;
@@ -306,243 +308,8 @@ details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabu
   const svgIn = (el, W, H, label) => d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', label);
   const tidy = (g) => g.attr('font-size', null).attr('font-family', null);
 
-  // Labels look like "F9 1882 · IAH → ORD · 11:36 AM → 2:25 PM". Order by route, then departure time.
+  // Labels look like "F9 1882 · IAH → ORD · 11:36 AM → 2:25 PM".
   const parts = (f) => { const [no, route = '', times = ''] = f.split(' · '); return { no, route, times }; };
-  const depMin = (times) => { const m = /(\d+):(\d+) (AM|PM)/.exec(times); return m ? (m[1] % 12) * 60 + +m[2] + (m[3] === 'PM' ? 720 : 0) : 0; };
-  function flightsList() {
-    return [...new Set(days.map((r) => r.Flight))].sort((a, b) => {
-      const p = parts(a), q = parts(b);
-      return p.route.localeCompare(q.route) || depMin(p.times) - depMin(q.times) || a.localeCompare(b);
-    });
-  }
-  // Default to the flight with the most tracked days (the list is sorted by route and time, not by usefulness).
-  function currentFlight() { const all = flightsList(); return all.includes(ui.flight) ? ui.flight : d3.greatest(all, (f) => days.filter((r) => r.Flight === f && r['Released at']).length); }
-  function rowsFor(flight) { return days.filter((r) => r.Flight === flight && (!ui.weekday || r.Weekday === ui.weekday)); }
-
-  function drawPicker(flight) {
-    const choose = (f) => { ui.flight = f; ui.weekday = null; ui.day = null; pinned = null; store.set('gw-flight', f); draw(); };
-    const all = flightsList();
-    const chips = document.createElement('div'); chips.className = 'chips';
-    chips.append(...all.map((f) => {
-      const { no, route, times } = parts(f);
-      const b = document.createElement('button'); b.className = 'chip'; b.setAttribute('aria-pressed', String(f === flight));
-      const a = document.createElement('span'); a.className = 'no'; a.textContent = no;
-      const c = document.createElement('span'); c.className = 'rt'; c.textContent = [route, times].filter(Boolean).join(' · ');
-      b.append(a, c);
-      b.addEventListener('click', () => choose(f));
-      return b;
-    }));
-    // Phones get a native dropdown, grouped by route.
-    const sel = document.createElement('select'); sel.className = 'flight-select'; sel.setAttribute('aria-label', 'Flight');
-    d3.groups(all, (f) => parts(f).route).forEach(([route, fs]) => {
-      const g = document.createElement('optgroup'); g.label = route || 'Other';
-      g.append(...fs.map((f) => new Option(`${parts(f).times || f} · ${parts(f).no}`, f)));
-      sel.append(g);
-    });
-    sel.value = flight;
-    sel.addEventListener('change', () => choose(sel.value));
-    $('#flights').replaceChildren(chips, sel);
-  }
-
-  function drawSummary(flight) {
-    const all = days.filter((r) => r.Flight === flight);
-    const finished = all.filter((r) => r.Outcome !== 'Not open yet' && r.Outcome !== 'Open now');
-    const opened = all.filter((r) => r['Released at']);
-    const known = opened.filter((r) => r['Release known']).map(hoursBefore);
-    const firstSeen = opened.map(hoursBefore);
-    const seats = opened.map((r) => r['Max seats seen']).filter((v) => v != null);
-    const typ = known.length ? relDay(med(known)) : null;
-    const early = firstSeen.length ? relDay(Math.max(...firstSeen)) : null;
-    const typical = typ ? typ.clock : '—', earliest = early ? early.clock : '—';
-    $('#t-typical').textContent = typical;
-    $('#n-typical').textContent = typ ? `${typ.text} · median` : 'median, when seen opening';
-    $('#t-earliest').textContent = earliest;
-    $('#n-earliest').textContent = early ? `${early.text} · set your alarm by this` : 'set your alarm by this';
-    $('#t-nights').textContent = finished.length ? `${finished.filter((r) => r['Released at']).length} of ${finished.length}` : '—';
-    $('#t-seats').textContent = seats.length ? (seats.reduce((a, b) => a + b, 0) / seats.length).toFixed(1) : '—';
-    const hours = finished.filter((r) => r.Outcome === 'Sold out').map((r) => r['Hours open']);
-    const t = $('#takeaway'); t.replaceChildren();
-    const b = (txt) => { const e = document.createElement('b'); e.textContent = txt; return e; };
-    if (!opened.length) { t.textContent = `No GoWild seats seen yet for ${flight}.`; return; }
-    t.append('Seats have shown up as early as ', b(`${earliest}, ${early.text}`));
-    if (typ) t.append(' and typically at ', b(`${typical}, ${typ.text}`));
-    t.append('.');
-    if (hours.length) t.append(' Once open they last a median of ', b(`${med(hours).toFixed(1)} h`), '.');
-  }
-
-  function drawWindows(flight) {
-    const el = $('#chart-windows');
-    const clear = $('#clear-weekday');
-    clear.hidden = !ui.weekday;
-    clear.textContent = ui.weekday ? `Showing ${ui.weekday} departures only · Show all ×` : '';
-    const rows = rowsFor(flight).sort((a, b) => (a.Date < b.Date ? 1 : -1)).slice(0, 30);
-    el.replaceChildren();
-    if (!rows.length) return empty(el, 'No tracked departures for this flight yet');
-    const now = nowWall();
-    const items = rows.map((r) => {
-      const start = r['Released at'] ? hoursFromMidnight(r['Released at'], r.Date) : null;
-      const dep = r['Departs at'] ? hoursFromMidnight(r['Departs at'], r.Date) : null;
-      let end = r['Sold out at'] ? hoursFromMidnight(r['Sold out at'], r.Date) : null;
-      if (start != null && end == null) end = Math.min(dep ?? 48, (now - (dayDate(r.Date) - 864e5)) / 36e5);
-      return { r, start, end, dep };
-    });
-    const W = el.clientWidth || 600, rowH = W < 480 ? 32 : 24, M = { t: 8, r: 12, b: 28, l: 88 };
-    const H = M.t + M.b + rowH * items.length;
-    const lo = Math.min(-2, d3.min(items, (d) => d.start ?? 0) - 0.5);
-    const hi = Math.max(26, d3.max(items, (d) => Math.max(d.end ?? 0, d.dep ?? 0)) + 0.5);
-    const x = d3.scaleLinear([lo, hi], [M.l, W - M.r]);
-    const y = d3.scaleBand(items.map((d) => d.r.Date), [M.t, H - M.b]).padding(0.25);
-    const svg = svgIn(el, W, H, 'Open window per departure');
-    const step = W < 480 ? 12 : 6;
-    const ticks = d3.range(Math.ceil(lo / step) * step, hi, step);
-    svg.append('g').attr('transform', `translate(0,${H - M.b})`).call(d3.axisBottom(x).tickValues(ticks).tickFormat(tickH).tickSize(-(H - M.t - M.b))).call(tidy);
-    [-1, 0, 24].filter((v) => v > lo && v < hi).forEach((v) => svg.append('line').attr('x1', x(v)).attr('x2', x(v)).attr('y1', M.t).attr('y2', H - M.b).attr('stroke', 'var(--ref)').attr('stroke-dasharray', v === -1 ? '1 3' : '3 3'));
-    svg.append('g').selectAll('text').data(items).join('text').attr('x', M.l - 8).attr('y', (d) => y(d.r.Date) + y.bandwidth() / 2).attr('dy', '0.32em').attr('text-anchor', 'end').text((d) => fmtDay(dayDate(d.r.Date)));
-    svg.append('g').selectAll('line').data(items.filter((d) => d.dep != null)).join('line')
-      .attr('x1', (d) => x(d.dep)).attr('x2', (d) => x(d.dep)).attr('y1', (d) => y(d.r.Date) - 2).attr('y2', (d) => y(d.r.Date) + y.bandwidth() + 2).attr('stroke', 'var(--muted)').attr('stroke-width', 2);
-    const bars = svg.append('g').selectAll('rect').data(items.filter((d) => d.start != null)).join('rect')
-      .attr('x', (d) => x(d.start)).attr('y', (d) => y(d.r.Date)).attr('height', y.bandwidth()).attr('width', (d) => Math.max(6, x(d.end) - x(d.start))).attr('rx', 4)
-      .attr('fill', (d) => (ui.day && ui.day !== d.r.Date ? 'var(--soft)' : d.r.Outcome.startsWith('Open') ? 'var(--accent-2)' : 'var(--accent)'))
-      .style('cursor', 'pointer');
-    tips(el, 'windows', bars, {
-      key: (d) => d.r.Date,
-      anchor: (d) => [(x(d.start) + Math.max(6, x(d.end) - x(d.start)) / 2), y(d.r.Date)],
-      content: (d) => [fmtDay(dayDate(d.r.Date)) + ' departure', [
-        `${d.r['Release known'] ? 'Opened' : 'Already open at first check'} ${when(d.r['Released at'])}`,
-        d.r['Sold out at'] ? `Sold out by ${when(d.r['Sold out at'])}` : d.r.Outcome,
-        `${d.r['Hours open']} h open${d.r['Max seats seen'] != null ? ` · up to ${d.r['Max seats seen']} seats` : ''}${d.r.Reopened ? ` · reopened ${d.r.Reopened}×` : ''}`,
-      ]],
-      select: (d) => { ui.day = d.r.Date; draw(); },
-    });
-    svg.append('g').selectAll('text').data(items.filter((d) => d.start == null)).join('text')
-      .attr('x', x(0) + 6).attr('y', (d) => y(d.r.Date) + y.bandwidth() / 2).attr('dy', '0.32em').text((d) => (d.r.Outcome === 'Not open yet' ? 'Not open yet' : 'No GoWild seats'));
-  }
-
-  function drawRelease(flight) {
-    const el = $('#chart-release');
-    const data = rowsFor(flight).filter((r) => r['Released at']).map((r) => ({ r, d: dayDate(r.Date), m: hoursBefore(r), known: r['Release known'] })).sort((a, b) => a.d - b.d);
-    el.replaceChildren();
-    if (!data.length) return empty(el, 'No releases seen yet');
-    const W = el.clientWidth || 400, H = 220, M = { t: 12, r: 16, b: 28, l: 52 };
-    const ext = d3.extent(data, (d) => d.d);
-    if (+ext[0] === +ext[1]) { ext[0] = d3.utcDay.offset(ext[0], -1); ext[1] = d3.utcDay.offset(ext[1], 1); }
-    const x = d3.scaleUtc(ext, [M.l, W - M.r]);
-    // Always show the official release (24 h) with some room either side; ticks on whole hours, days when the range is wide.
-    const step = [3, 6, 12, 24, 48].find((s) => (Math.max(30, d3.max(data, (d) => d.m)) - Math.min(18, d3.min(data, (d) => d.m))) / s <= 5) || 96;
-    const lo = Math.floor(Math.min(18, d3.min(data, (d) => d.m)) / step) * step, hi = Math.ceil(Math.max(30, d3.max(data, (d) => d.m)) / step) * step;
-    const y = d3.scaleLinear([lo, hi], [H - M.b, M.t]);
-    const svg = svgIn(el, W, H, 'Release time by departure date');
-    svg.append('g').attr('transform', `translate(0,${H - M.b})`).call(d3.axisBottom(x).ticks(d3.utcDay.every(Math.max(1, Math.ceil((ext[1] - ext[0]) / 864e5 / Math.max(2, Math.floor(W / 90)))))).tickFormat(d3.utcFormat('%b %-d'))).call(tidy);
-    svg.append('g').attr('transform', `translate(${M.l},0)`).call(d3.axisLeft(y).tickValues(d3.range(lo, hi + 1, step)).tickFormat(spanH).tickSize(-(W - M.l - M.r))).call(tidy).call((g) => g.select('.domain').remove());
-    // Official release: midnight going into the day before. Midnight Eastern (an hour earlier) only when there's room to tell them apart.
-    const refs = [[24, '3 3', 'expected: midnight, day before']];
-    if (y(24) - y(25) >= 14) refs.push([25, '1 3', 'midnight Eastern']);
-    refs.forEach(([v, dash, label]) => {
-      svg.append('line').attr('x1', M.l).attr('x2', W - M.r).attr('y1', y(v)).attr('y2', y(v)).attr('stroke', 'var(--ref)').attr('stroke-dasharray', dash);
-      svg.append('text').attr('x', W - M.r).attr('y', y(v) - 4).attr('text-anchor', 'end').text(label);
-    });
-    const known = data.filter((d) => d.known);
-    if (known.length > 1) svg.append('path').datum(known).attr('fill', 'none').attr('stroke', 'var(--accent)').attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', d3.line((d) => x(d.d), (d) => y(d.m)));
-    svg.append('g').selectAll('circle').data(data).join('circle').attr('cx', (d) => x(d.d)).attr('cy', (d) => y(d.m)).attr('r', 4.5)
-      .attr('fill', (d) => (d.known ? 'var(--accent)' : 'var(--panel)')).attr('stroke', 'var(--accent)').attr('stroke-width', 2).attr('pointer-events', 'none');
-    const hits = svg.append('g').selectAll('circle').data(data).join('circle').attr('cx', (d) => x(d.d)).attr('cy', (d) => y(d.m)).attr('r', 16)
-      .attr('fill', 'transparent').style('cursor', 'pointer');
-    tips(el, 'release', hits, {
-      key: (d) => d.r.Date,
-      anchor: (d) => [x(d.d), y(d.m) - 6],
-      content: (d) => [fmtDay(d.d) + ' departure', [
-        d.known ? `Seats appeared ${when(d.r['Released at'])}` : `Already open at first check, ${when(d.r['Released at'])}`,
-        `${relDay(d.m).text} · ${spanH(d.m)} before ${d3.utcFormat('%a')(d.d)} 12 AM`,
-      ]],
-      select: (d) => { ui.day = d.r.Date; draw(); },
-    });
-  }
-
-  function drawWeekday(flight) {
-    const el = $('#chart-weekday');
-    const all = days.filter((r) => r.Flight === flight && r.Outcome !== 'Not open yet');
-    el.replaceChildren();
-    if (!all.length) return empty(el, 'Not enough history yet');
-    const data = DAYS.map((d) => {
-      const rows = all.filter((r) => r.Weekday === d);
-      const sold = rows.filter((r) => r.Outcome === 'Sold out');
-      return { d, n: rows.length, withSeats: rows.filter((r) => r['Released at']).length, avg: sold.length ? sold.reduce((a, r) => a + r['Hours open'], 0) / sold.length : 0 };
-    });
-    const W = el.clientWidth || 400, H = 220, M = { t: 20, r: 8, b: 40, l: 8 };
-    const x = d3.scaleBand(DAYS, [M.l, W - M.r]).padding(0.3);
-    const y = d3.scaleLinear([0, Math.max(1, d3.max(data, (d) => d.avg))], [H - M.b, M.t]).nice();
-    const svg = svgIn(el, W, H, 'Average hours open by weekday');
-    svg.append('line').attr('x1', M.l).attr('x2', W - M.r).attr('y1', H - M.b).attr('y2', H - M.b).attr('stroke', 'var(--soft)');
-    const g = svg.append('g').selectAll('g').data(data).join('g').style('cursor', 'pointer')
-      .on('click', (ev, d) => { ui.weekday = ui.weekday === d.d ? null : d.d; ui.day = null; draw(); });
-    g.append('rect').attr('x', (d) => x(d.d)).attr('width', x.bandwidth()).attr('y', (d) => y(d.avg)).attr('height', (d) => H - M.b - y(d.avg)).attr('rx', 4)
-      .attr('fill', (d) => (!ui.weekday || ui.weekday === d.d ? 'var(--accent)' : 'var(--soft)'));
-    g.append('rect').attr('x', (d) => x(d.d)).attr('width', x.bandwidth()).attr('y', M.t).attr('height', H - M.b - M.t).attr('fill', 'transparent');
-    g.append('text').attr('x', (d) => x(d.d) + x.bandwidth() / 2).attr('y', (d) => y(d.avg) - 6).attr('text-anchor', 'middle').text((d) => (d.avg ? d.avg.toFixed(1) + ' h' : ''));
-    g.append('text').attr('x', (d) => x(d.d) + x.bandwidth() / 2).attr('y', H - M.b + 16).attr('text-anchor', 'middle').style('fill', 'var(--fg)').text((d) => d.d);
-    g.append('text').attr('x', (d) => x(d.d) + x.bandwidth() / 2).attr('y', H - M.b + 31).attr('text-anchor', 'middle').text((d) => (d.n ? `${d.withSeats}/${d.n}` : ''));
-  }
-
-  function drawSeats(flight) {
-    const el = $('#chart-seats'), pick = $('#seat-day');
-    const mine = checks.filter((r) => r.Flight === flight);
-    const dates = [...new Set(mine.map((r) => r.Date))].sort().reverse();
-    const date = dates.includes(ui.day) ? ui.day : dates[0];
-    pick.replaceChildren(...dates.map((d) => new Option(fmtDay(dayDate(d)), d)));
-    pick.disabled = !dates.length;
-    if (date) pick.value = date;
-    el.replaceChildren();
-    if (!date) return empty(el, 'No seat checks for this flight yet');
-    const data = mine.filter((r) => r.Date === date).sort((a, b) => a['Hours after midnight'] - b['Hours after midnight']);
-    const known = data.map((d) => d['Seats left']).filter((v) => v != null);
-    const top = Math.max(3, known.length ? Math.max(...known) : 0) + 1;   // "open, count not shown" sits on the top line
-    const val = (d) => (d['Seats left'] == null ? top : d['Seats left']);
-    const W = el.clientWidth || 600, H = 220, M = { t: 12, r: 16, b: 28, l: 44 };
-    const ext = d3.extent(data, (d) => d['Hours after midnight']);
-    if (ext[0] === ext[1]) ext[1] = ext[0] + 1;
-    const x = d3.scaleLinear(ext, [M.l, W - M.r]);
-    const y = d3.scaleLinear([0, top], [H - M.b, M.t]);
-    const svg = svgIn(el, W, H, 'GoWild seats left by hours after midnight');
-    svg.append('g').attr('transform', `translate(0,${H - M.b})`).call(d3.axisBottom(x).ticks(Math.max(3, Math.floor(W / 80))).tickFormat(tickH)).call(tidy);
-    svg.append('g').attr('transform', `translate(${M.l},0)`).call(d3.axisLeft(y).tickValues(d3.range(0, top + 1)).tickFormat((v) => (v === top ? 'open' : v)).tickSize(-(W - M.l - M.r))).call(tidy).call((g) => g.select('.domain').remove());
-    svg.append('path').datum(data).attr('fill', 'var(--accent-2)').attr('fill-opacity', 0.12).attr('d', d3.area((d) => x(d['Hours after midnight']), y(0), (d) => y(val(d))).curve(d3.curveStepAfter));
-    svg.append('path').datum(data).attr('fill', 'none').attr('stroke', 'var(--accent-2)').attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('d', d3.line((d) => x(d['Hours after midnight']), (d) => y(val(d))).curve(d3.curveStepAfter));
-    svg.append('g').selectAll('circle').data(data).join('circle').attr('cx', (d) => x(d['Hours after midnight'])).attr('cy', (d) => y(val(d))).attr('r', 3.5).attr('fill', 'var(--accent-2)').attr('pointer-events', 'none');
-    // The whole plot is the target: hover, tap or drag picks the nearest check.
-    const tip = tipFor(el);
-    const ring = svg.append('circle').attr('class', 'ring').attr('r', 6).attr('fill', 'none').attr('stroke', 'var(--accent-2)').attr('stroke-width', 2).attr('pointer-events', 'none').attr('visibility', 'hidden');
-    const nearest = (px) => { const h = x.invert(px); return data.reduce((a, b) => (Math.abs(b['Hours after midnight'] - h) < Math.abs(a['Hours after midnight'] - h) ? b : a)); };
-    const point = (d) => {
-      const cx = x(d['Hours after midnight']), cy = y(val(d)), s = d['Seats left'];
-      ring.attr('cx', cx).attr('cy', cy).attr('visibility', 'visible');
-      tip.show(cx, cy - 6, when(d['Checked at']), [!d['GoWild open'] ? 'No GoWild seats' : s == null ? "Open (Frontier didn't show a count)" : `${s} GoWild seat${s === 1 ? '' : 's'} left`]);
-    };
-    svg.append('rect').attr('class', 'scrub hit').attr('x', M.l).attr('y', M.t).attr('width', W - M.l - M.r).attr('height', H - M.t - M.b).attr('fill', 'transparent')
-      .on('pointerdown pointermove', (ev) => {
-        if (ev.pointerType !== 'mouse' && ev.type === 'pointermove' && !ev.buttons) return;
-        const d = nearest(d3.pointer(ev, svg.node())[0]);
-        if (ev.pointerType !== 'mouse') pinned = { name: 'seats', key: d['Checked at'] };
-        point(d);
-      })
-      .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') { tip.hide(); ring.attr('visibility', 'hidden'); } });
-    if (pinned && pinned.name === 'seats') { const d = data.find((v) => v['Checked at'] === pinned.key); if (d) point(d); }
-  }
-
-  function drawTable(flight) {
-    const rows = rowsFor(flight).sort((a, b) => (a.Date < b.Date ? 1 : -1));
-    $('#day-table tbody').replaceChildren(...rows.map((r) => {
-      const tr = document.createElement('tr'); tr.tabIndex = 0; tr.setAttribute('aria-selected', String(r.Date === ui.day));
-      const cells = [fmtDay(dayDate(r.Date)), r['Released at'] ? (r['Release known'] ? '' : 'by ') + when(r['Released at']) : '—', r['Sold out at'] ? when(r['Sold out at']) : '—', r['Released at'] ? r['Hours open'].toFixed(1) : '—', r['Max seats seen'] ?? '—'];
-      cells.forEach((c, i) => { const td = document.createElement('td'); td.textContent = String(c); if (i >= 3) td.className = 'num'; if (i === 4) td.classList.add('hide-narrow'); tr.append(td); });
-      const td = document.createElement('td'); const p = document.createElement('span');
-      p.className = 'pill ' + (r.Outcome.startsWith('Open') ? 'open' : r.Outcome === 'Sold out' ? 'sold' : r.Outcome === 'Never opened' ? 'none' : '');
-      p.textContent = r.Outcome; td.append(p); tr.append(td);
-      const go = () => { ui.day = r.Date; draw(); };
-      tr.addEventListener('click', go);
-      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
-      return tr;
-    }));
-  }
 
   // ---- Month view: one calendar, both directions of a route pair per day. ----
   const STATES = {
@@ -668,7 +435,7 @@ details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabu
       }
       else if (!rds.every((r) => r.state === 'untracked' || (r.state === 'blackout' && !r.info))) rds.forEach((rd, j) => b.append(stripe(rd, pair[j])));
       b.addEventListener('click', () => {
-        ui.cal = date; setHash(); drawCalendar(); drawDay();
+        ui.cal = date; setHash(); drawCalendar(); drawDay(); drawTrends();
         const card = $('#day'), r = card.getBoundingClientRect();
         if (r.top > window.innerHeight - 80 || r.bottom < 0) card.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
       });
@@ -757,9 +524,6 @@ details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabu
       });
       det.append(sum, ol); box.append(det);
     }
-    const go = document.createElement('button'); go.className = 'link'; go.style.marginTop = '8px'; go.textContent = 'Trends for this flight ↓';
-    go.addEventListener('click', () => { ui.flight = r.Flight; ui.weekday = null; ui.day = r.Date; store.set('gw-flight', r.Flight); draw(); $('#flights').scrollIntoView({ behavior: 'smooth' }); });
-    box.append(go);
     return box;
   }
 
@@ -787,15 +551,212 @@ details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabu
     });
   }
 
+  // ---- Trends: per direction, from every departure's open/closed history. ----
+  const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const TREND_DAYS = 56;   // the day-by-day timeline shows the last 8 weeks
+  // Hours relative to midnight at the start of the departure date (negative = before).
+  const relH = (d, date) => (d - dayDate(date)) / 36e5;
+  const departed = (r) => r['Departs at'] && wall(r['Departs at']) <= nowWall();
+  function depStats(r) {
+    const segs = segments(r), open = segs.filter((s) => s.st === 'open');
+    const openH = d3.sum(open, (s) => (s.b - s.a) / 36e5);
+    // Only releases the tracker saw happen (it was watching while closed first) say when seats appeared.
+    const caught = open.length && segs[0].st !== 'open' ? open[0].a : null;
+    return { r, segs, open, openH, caught, done: departed(r), late: r.Outcome === 'No seats seen' };
+  }
+  const dirIndex = (rk) => Math.max(0, currentPair().indexOf(rk));
+  const dirLabel = (rk) => { const s = document.createElement('span'); s.className = `dirdot dir-${dirIndex(rk)}`; return s; };
+  function openDay(date) {
+    ui.cal = date; ui.month = date.slice(0, 7); setHash(); draw();
+    $('.top').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  function drawSummary() {
+    const pair = currentPair();
+    const head = ['', 'Got seats', 'Hours open (median)', 'First seen (median)', 'Earliest seen'];
+    const thead = document.createElement('thead'); const hr = document.createElement('tr');
+    head.forEach((h, i) => { const th = document.createElement('th'); th.textContent = h; if (i === 1 || i === 2) th.className = 'num'; if (i === 4) th.classList.add('hide-narrow'); hr.append(th); });
+    thead.append(hr);
+    const tbody = document.createElement('tbody');
+    pair.forEach((rk) => {
+      const st = days.filter((r) => r.Route === rk).map(depStats).filter((d) => d.done && !d.late);
+      const got = st.filter((d) => d.open.length);
+      const caught = st.filter((d) => d.caught).map((d) => -relH(d.caught, d.r.Date));
+      const early = d3.max(st.filter((d) => d.open.length), (d) => -relH(d.open[0].a, d.r.Date));
+      const tr = document.createElement('tr');
+      const th = document.createElement('td'); th.style.whiteSpace = 'nowrap'; th.append(dirLabel(rk), ' ', arrow(rk));
+      const cell = (t, num) => { const td = document.createElement('td'); td.textContent = t; if (num) td.className = 'num'; return td; };
+      const rel = (h) => { const x = relDay(h), d = Math.ceil(h / 24 - 1e-9); return `${x.clock} · ${d <= 0 ? 'same day' : `${d}d before`}`; };
+      tr.append(th,
+        cell(st.length ? `${got.length} of ${st.length}` : '—', true),
+        cell(got.length ? `${med(got.map((d) => d.openH)).toFixed(0)} h` : '—', true),
+        cell(caught.length ? `${rel(med(caught))} (of ${caught.length})` : 'not caught yet'),
+        cell(early != null ? rel(early) : '—'));
+      tr.lastChild.classList.add('hide-narrow');
+      tbody.append(tr);
+    });
+    $('#summary').replaceChildren(thead, tbody);
+  }
+
+  function drawTimeline(el, rk) {
+    el.replaceChildren();
+    const h = document.createElement('h3'); h.className = 'sub-h'; h.append(dirLabel(rk), arrow(rk)); el.append(h);
+    const box = document.createElement('div'); box.className = 'chart'; box.style.minHeight = '0'; el.append(box);
+    const cutoff = isoDay(d3.utcDay.offset(nowWall(), -TREND_DAYS));
+    let rows = days.filter((r) => r.Route === rk && r.Date >= cutoff).map(depStats);
+    if (!rows.length) return empty(box, 'No departures yet');
+    const byDate = (a, b) => (a.r.Date < b.r.Date ? 1 : a.r.Date > b.r.Date ? -1 : a.r['Departs at'] < b.r['Departs at'] ? -1 : 1);
+    rows.sort(ui.order === 'weekday' ? (a, b) => WEEKDAYS.indexOf(a.r.Weekday) - WEEKDAYS.indexOf(b.r.Weekday) || byDate(a, b) : byDate);
+    const W = box.clientWidth || 420, narrow = W < 440, rowH = narrow ? 22 : 20, gapH = ui.order === 'weekday' ? 10 : 0;
+    const M = { t: 20, r: 10, b: 24, l: narrow ? 66 : 78 };
+    // Row positions, with a little gap between weekday groups.
+    let yy = M.t; rows.forEach((d, i) => { if (i && gapH && d.r.Weekday !== rows[i - 1].r.Weekday) yy += gapH; d.y = yy; yy += rowH; });
+    const H = yy + M.b;
+    const lo = Math.max(-8 * 24, Math.min(-72, d3.min(rows, (d) => (d.segs.length ? relH(d.segs[0].a, d.r.Date) : 0))) - 2);
+    const hi = Math.max(12, d3.max(rows, (d) => (d.r['Departs at'] ? relH(wall(d.r['Departs at']), d.r.Date) : 0)) + 1);
+    const x = d3.scaleLinear([lo, hi], [M.l, W - M.r]);
+    const svg = svgIn(box, W, H, `GoWild open times per departure, ${arrow(rk)}`);
+    const mids = d3.range(Math.ceil(lo / 24) * 24, hi, 24);
+    svg.append('g').selectAll('line').data(d3.range(Math.ceil(lo / 12) * 12, hi, 12)).join('line')
+      .attr('x1', x).attr('x2', x).attr('y1', M.t - 4).attr('y2', H - M.b).attr('stroke', 'var(--line)').attr('stroke-dasharray', (v) => (v % 24 ? '2 3' : null));
+    svg.append('g').selectAll('text').data(mids).join('text').attr('x', (v) => x(v) + 3).attr('y', H - 8)
+      .text((v) => (v === 0 ? (narrow ? 'dep' : 'dep. day') : narrow ? `−${-v / 24}d` : -v === 24 ? 'day before' : `${-v / 24} days before`));
+    if (lo < -24) {
+      svg.append('line').attr('x1', x(-24)).attr('x2', x(-24)).attr('y1', M.t - 10).attr('y2', H - M.b).attr('stroke', 'var(--ref)').attr('stroke-dasharray', '4 3');
+      svg.append('text').attr('x', x(-24) + 3).attr('y', M.t - 8).text('official release');
+    }
+    const g = svg.append('g').selectAll('g').data(rows).join('g').attr('transform', (d) => `translate(0,${d.y})`).style('cursor', 'pointer')
+      .on('click', (ev, d) => openDay(d.r.Date));
+    g.append('rect').attr('x', 0).attr('width', W).attr('height', rowH).attr('fill', (d) => (d.r.Date === ui.cal ? 'var(--bg)' : 'transparent'));
+    g.append('text').attr('x', M.l - 6).attr('y', rowH / 2).attr('dy', '0.32em').attr('text-anchor', 'end')
+      .style('fill', (d) => (d.r.Date === ui.cal ? 'var(--fg)' : null)).text((d) => (narrow ? d3.utcFormat('%a %-m/%-d') : fmtDay)(dayDate(d.r.Date)));
+    const mid = rowH / 2;
+    g.append('line').attr('x1', (d) => x(d.segs.length ? relH(d.segs[0].a, d.r.Date) : lo)).attr('x2', (d) => x(d.r['Departs at'] ? relH(wall(d.r['Departs at']), d.r.Date) : hi))
+      .attr('y1', mid).attr('y2', mid).attr('stroke', 'var(--soft)').attr('stroke-width', 1.5);
+    g.filter((d) => d.r['Departs at']).append('line').attr('x1', (d) => x(relH(wall(d.r['Departs at']), d.r.Date))).attr('x2', (d) => x(relH(wall(d.r['Departs at']), d.r.Date)))
+      .attr('y1', 3).attr('y2', rowH - 3).attr('stroke', 'var(--fg)').attr('stroke-width', 2);
+    // Already open at the first check: the release was earlier, so trail off to the left.
+    g.filter((d) => d.segs.length && d.segs[0].st === 'open').append('line')
+      .attr('x1', (d) => x(relH(d.segs[0].a, d.r.Date)) - 12).attr('x2', (d) => x(relH(d.segs[0].a, d.r.Date)))
+      .attr('y1', mid).attr('y2', mid).attr('stroke', 'var(--accent-2)').attr('stroke-width', 3).attr('stroke-dasharray', '2 2');
+    const bars = g.selectAll('rect.seg').data((d) => d.open.map((s) => ({ s, d }))).join('rect').attr('class', 'seg')
+      .attr('x', (o) => x(relH(o.s.a, o.d.r.Date))).attr('width', (o) => Math.max(3, x(relH(o.s.b, o.d.r.Date)) - x(relH(o.s.a, o.d.r.Date)) - 1))
+      .attr('y', 4).attr('height', rowH - 8).attr('rx', 3).attr('fill', 'var(--accent-2)');
+    g.filter((d) => !d.open.length && (d.done || d.r.Outcome === 'Never opened')).append('text')
+      .attr('x', (d) => x(d.r['Departs at'] ? relH(wall(d.r['Departs at']), d.r.Date) : hi) - 6).attr('y', mid).attr('dy', '0.32em').attr('text-anchor', 'end')
+      .text((d) => (d.late ? 'none seen' : 'never opened'));
+    tips(box, 'tl:' + rk, g, {
+      key: (d) => d.r.Flight + d.r.Date,
+      anchor: (d) => [x(d.open.length ? relH(d.open[0].a, d.r.Date) : 0), d.y],
+      content: (d) => [`${fmtDay(dayDate(d.r.Date))} · ${parts(d.r.Flight).no} ${clockOf(wall(d.r['Departs at']))}`,
+        d.open.length
+          ? [...d.open.slice(0, 4).map((s) => `Open ${when(isoStamp(s.a))} → ${when(isoStamp(s.b))}${s.seats != null ? ` · ${s.seats} left` : ''}`),
+            ...(d.open.length > 4 ? [`…and ${d.open.length - 4} more windows`] : []),
+            `${spanH(d.openH) || '<1 h'} open in all${d.segs[0].st === 'open' ? ' · already open when watching began' : ''}`]
+          : [d.r.Outcome]],
+    });
+  }
+
+  function weekly(rk) {
+    const st = days.filter((r) => r.Route === rk).map(depStats).filter((d) => d.done && !d.late);
+    return d3.groups(st, (d) => isoDay(d3.utcMonday.floor(dayDate(d.r.Date)))).map(([wk, ds]) => ({
+      rk, wk: dayDate(wk), n: ds.length, partial: d3.utcDay.offset(dayDate(wk), 7) > nowWall(), hours: d3.mean(ds, (d) => d.openH), share: ds.filter((d) => d.open.length).length / ds.length,
+    })).sort((a, b) => a.wk - b.wk);
+  }
+
+  function drawWeekChart(el, key, fmt, maxY) {
+    el.replaceChildren();
+    const pair = currentPair(), series = pair.map((rk) => ({ rk, pts: weekly(rk) })).filter((s) => s.pts.length);
+    const all = series.flatMap((s) => s.pts);
+    if (!all.length) return empty(el, 'No finished weeks yet');
+    const W = el.clientWidth || 400, H = 220, M = { t: 14, r: 64, b: 28, l: 40 };
+    const ext = d3.extent(all, (p) => p.wk);
+    if (+ext[0] === +ext[1]) { ext[0] = d3.utcDay.offset(ext[0], -7); ext[1] = d3.utcDay.offset(ext[1], 7); }
+    const x = d3.scaleUtc(ext, [M.l + 8, W - M.r]);
+    const y = d3.scaleLinear([0, maxY ?? Math.max(10, d3.max(all, (p) => p[key]))], [H - M.b, M.t]).nice();
+    const svg = svgIn(el, W, H, 'Weekly trend by direction');
+    svg.append('g').attr('transform', `translate(0,${H - M.b})`).call(d3.axisBottom(x).ticks(d3.utcMonday.every(Math.max(1, Math.ceil(d3.utcMonday.count(...ext) / Math.max(2, Math.floor(W / 80)))))).tickFormat(d3.utcFormat('%b %-d'))).call(tidy);
+    svg.append('g').attr('transform', `translate(${M.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(fmt).tickSize(-(W - M.l - M.r))).call(tidy).call((g) => g.select('.domain').remove());
+    series.forEach((s) => {
+      const i = dirIndex(s.rk), col = `var(--dir-${i})`;
+      // A week that isn't over yet gets a dashed link and a hollow point: it will still move.
+      const line = d3.line((p) => x(p.wk), (p) => y(p[key]));
+      const done = s.pts.filter((p) => !p.partial), tail = s.pts.slice(Math.max(0, done.length - 1));
+      svg.append('path').datum(done).attr('fill', 'none').attr('stroke', col).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', line);
+      if (tail.length > 1 && tail[tail.length - 1].partial) svg.append('path').datum(tail).attr('fill', 'none').attr('stroke', col).attr('stroke-width', 2).attr('stroke-dasharray', '4 4').attr('d', line);
+      const last = s.pts[s.pts.length - 1];
+      svg.append('text').attr('x', x(last.wk) + 9).attr('y', y(last[key])).attr('dy', '0.32em').style('fill', 'var(--fg)').text(arrow(s.rk).replace(' → ', '→'));
+      const dots = svg.append('g').selectAll('circle').data(s.pts).join('circle').attr('cx', (p) => x(p.wk)).attr('cy', (p) => y(p[key])).attr('r', 4.5)
+        .attr('fill', (p) => (p.partial ? 'var(--panel)' : col)).attr('stroke', (p) => (p.partial ? col : 'var(--panel)')).attr('stroke-width', 2);
+      const hits = svg.append('g').selectAll('circle').data(s.pts).join('circle').attr('cx', (p) => x(p.wk)).attr('cy', (p) => y(p[key])).attr('r', 14).attr('fill', 'transparent');
+      tips(el, `wk:${key}:${s.rk}`, hits, {
+        key: (p) => +p.wk, anchor: (p) => [x(p.wk), y(p[key]) - 6],
+        content: (p) => [`${arrow(s.rk)} · week of ${d3.utcFormat('%b %-d')(p.wk)}`, [`${fmt(p[key])}`, `${p.n} finished departure${p.n === 1 ? '' : 's'}${p.partial ? ' so far (week in progress)' : ''}`]],
+      });
+      dots.lower();
+    });
+  }
+
+  function drawGrid(el, rk) {
+    el.replaceChildren();
+    const h = document.createElement('h3'); h.className = 'sub-h'; h.append(dirLabel(rk), arrow(rk)); el.append(h);
+    const mine = days.filter((r) => r.Route === rk).map(depStats);
+    const tracked = [...mine.map((d) => d.r.Date), ...dates.filter((r) => r.Route === rk && r.Checks).map((r) => r.Date)].sort();
+    if (!tracked.length) { const b = document.createElement('div'); el.append(b); return empty(b, 'Nothing tracked yet'); }
+    const maxH = Math.max(24, d3.max(mine, (d) => d.openH) || 0);
+    const grid = document.createElement('div'); grid.className = 'wg';
+    grid.append(document.createElement('div'), ...WEEKDAYS.map((d) => Object.assign(document.createElement('div'), { className: 'h', textContent: narrowDay(d) })));
+    const weeks = d3.utcMonday.range(d3.utcMonday.floor(dayDate(tracked[0])), d3.utcDay.offset(dayDate(tracked[tracked.length - 1]), 1)).reverse();
+    weeks.forEach((wk) => {
+      grid.append(Object.assign(document.createElement('div'), { className: 'wl', textContent: d3.utcFormat('%b %-d')(wk) }));
+      for (let i = 0; i < 7; i++) {
+        const date = isoDay(d3.utcDay.offset(wk, i)), rd = routeDay(date, rk);
+        const ds = mine.filter((d) => d.r.Date === date);
+        const c = document.createElement('button'); c.className = 'c';
+        const sp = document.createElement('span');
+        let label;
+        if (ds.length) {
+          const best = d3.greatest(ds, (d) => d.openH);
+          const live = !best.done;
+          sp.textContent = best.late && !best.open.length ? '?' : `${Math.round(best.openH)}${live ? '+' : ''}`;
+          c.style.setProperty('--a', (0.08 + 0.55 * Math.min(1, best.openH / maxH)).toFixed(2));
+          if (!best.open.length && best.done && !best.late) c.classList.add('never');
+          if (live) c.classList.add('live');
+          label = `${spanH(best.openH) || '0 h'} open${live ? ' so far' : ''}, ${best.r.Outcome}`;
+        } else if (rd.state === 'blackout') { c.classList.add('bo'); sp.textContent = 'BO'; label = 'blackout'; }
+        else if (rd.state === 'noflight') { c.classList.add('nf'); sp.textContent = '—'; label = 'no nonstop'; }
+        else { c.classList.add('nf'); label = 'not tracked'; }
+        if (date === ui.cal) c.classList.add('sel');
+        c.setAttribute('aria-label', `${fmtLong(dayDate(date))}, ${arrow(rk)}: ${label}`);
+        c.title = `${fmtDay(dayDate(date))}: ${label}`;
+        c.append(sp);
+        if (ds.length || rd.state !== 'untracked') c.addEventListener('click', () => openDay(date));
+        grid.append(c);
+      }
+    });
+    el.append(grid);
+  }
+  const narrowDay = (d) => (window.innerWidth < 420 ? d[0] + (d === 'Thu' || d === 'Tue' ? d[1] : d === 'Sat' || d === 'Sun' ? d[1] : '') : d);
+
+  function drawTrends() {
+    const pair = currentPair();
+    drawSummary();
+    const tl = $('#timelines'); tl.replaceChildren(...pair.map(() => document.createElement('div')));
+    pair.forEach((rk, i) => drawTimeline(tl.children[i], rk));
+    drawWeekChart($('#wk-hours'), 'hours', (v) => `${Math.round(v)} h`);
+    drawWeekChart($('#wk-share'), 'share', d3.format('.0%'), 1);
+    const gr = $('#grids'); gr.replaceChildren(...pair.map(() => document.createElement('div')));
+    pair.forEach((rk, i) => drawGrid(gr.children[i], rk));
+    document.querySelectorAll('.seg .link').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.order === ui.order)));
+  }
+
   function setHash() { try { history.replaceState(null, '', '#' + ui.cal); } catch (e) { /* sandboxed */ } }
   function readHash() { const m = /^#(\d{4}-\d{2}-\d{2})$/.exec(location.hash); if (m) { ui.cal = m[1]; ui.month = m[1].slice(0, 7); } }
 
   function draw() {
     if (!days.length) return;
-    const flight = currentFlight();
     if (!ui.cal) ui.cal = defaultDay();
-    drawCalendar(); drawDay();
-    drawPicker(flight); drawSummary(flight); drawWindows(flight); drawRelease(flight); drawWeekday(flight); drawSeats(flight); drawTable(flight);
+    drawCalendar(); drawDay(); drawTrends();
   }
 
   const table = (t) => (t.rows || []).map((r) => Object.fromEntries(t.columns.map((c, i) => [c, r[i]])));
@@ -806,7 +767,7 @@ details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabu
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = await res.json();
       const firstData = !days.length;
-      days = table(j.days); checks = table(j.checks); dates = j.dates ? table(j.dates) : []; routesCfg = j.routes || []; generatedAt = j.generated_at;
+      days = table(j.days); dates = j.dates ? table(j.dates) : []; routesCfg = j.routes || []; generatedAt = j.generated_at;
       document.body.classList.toggle('first', firstData);
       if (firstData) setTimeout(() => document.body.classList.remove('first'), 600);
       const g = new Date(j.generated_at);
@@ -832,11 +793,10 @@ details.log ol { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabu
   $('#cal-prev').addEventListener('click', () => toMonth(-1));
   $('#cal-next').addEventListener('click', () => toMonth(1));
   $('#cal-pick').addEventListener('change', (e) => { ui.month = e.target.value; drawCalendar(); });
-  $('#cal-pair').addEventListener('change', (e) => { ui.pair = e.target.value; store.set('gw-pair', ui.pair); drawCalendar(); drawDay(); });
-  window.addEventListener('hashchange', () => { readHash(); if (days.length) { drawCalendar(); drawDay(); } });
+  $('#cal-pair').addEventListener('change', (e) => { ui.pair = e.target.value; store.set('gw-pair', ui.pair); draw(); });
+  window.addEventListener('hashchange', () => { readHash(); draw(); });
   readHash();
-  $('#clear-weekday').addEventListener('click', () => { ui.weekday = null; draw(); });
-  $('#seat-day').addEventListener('change', (e) => { ui.day = e.target.value; draw(); });
+  document.querySelectorAll('.seg .link').forEach((b) => b.addEventListener('click', () => { ui.order = b.dataset.order; store.set('gw-order', ui.order); drawTrends(); }));
   let lastW = window.innerWidth;
   window.addEventListener('resize', () => { if (Math.abs(window.innerWidth - lastW) > 40) { lastW = window.innerWidth; draw(); } });
   load();

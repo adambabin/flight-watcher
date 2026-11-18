@@ -8,7 +8,7 @@ A Frontier Airlines **GoWild pass** seat tracker for one user (adambabin), who i
 
 Domain facts the design relies on:
 - Domestic GoWild fares open the day before departure, around midnight going into that day. Wednesday's flights open around midnight going into Tuesday.
-  - **The exact time is unconfirmed.** On 2026-10-24 the ORD→IAH seats for Mon Oct 26 were already open at 11:18 PM CT Saturday. On 2026-10-25 at 9:54 PM, both Tue Oct 27 flights were already open, more than a day before the expected release. Hourly ticks now look 3 days out to find the real opening edge; once it's known, move the night watch to it.
+  - **The exact time is unconfirmed.** On 2026-10-24 the ORD→IAH seats for Mon Oct 26 were already open at 11:18 PM CT Saturday. On 2026-10-25 at 9:54 PM, both Tue Oct 27 flights were already open, more than a day before the expected release. Hourly ticks look 7 days out (3 until 2026-11-18, which was too late: in 15 of the first 25 openings the seats were already open at the first check) to find the real opening edge; once it's known, move the night watch to it.
   - Flight numbers and times differ by weekday. On Tue, ORD→IAH is F9 3135 at 2:11 PM and IAH→ORD is F9 3136 at 6:16 PM.
 - Seats are few and can reappear later when people cancel.
 - Blackout dates have no GoWild fares (`flightwatch/rules.py`, posted through Apr 2027; add new dates there when Frontier posts them).
@@ -48,7 +48,7 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 - Verified working from GitHub Actions runners on 2026-10-24. At that point Frontier had one nonstop each way: F9 3135 ORD→IAH 7:40 AM, F9 1882 IAH→ORD 11:36 AM.
 
 **Run modes** (`runner.py` `App`), picked by local Central time in `pick_mode()`, because cron is in UTC and covers both DST offsets:
-- `tick` (hourly cron): answer commands, poll today through `LOOKAHEAD_DAYS` (3) days ahead for every route, fire alerts, send the digest if it's due (first run at or after `digest.time`, within 6 h).
+- `tick` (hourly cron): answer commands, poll today through `LOOKAHEAD_DAYS` (7) days ahead for every route (about 16 Frontier requests), fire alerts, send the digest if it's due (first run at or after `digest.time`, within 6 h).
 - `night`: started at 10:40 PM CT by cron (`pick_mode` treats 10:30 PM–12:20 AM as night). It polls only the date about to open (midnight + 1 day) until 12:30 AM. `_next_poll` checks every 4 min, tightening to every 2 min within −3/+12 min of midnight Eastern (`HOT_ZONES`) and local midnight. It processes commands every cycle, arms nightly alerts, and afterwards sends a "no seats" note for armed alerts that saw nothing. Blackout targets fall back to `tick`.
 - **Clock:** GitHub cron proved unreliable (on 2026-10-25/26 it dropped the night watch and the 6 AM digest), so the relay worker's Cron Triggers (`5 * * * *`, `40 3,4 * * *` UTC) post `/tick` to the inbox issue every hour. `commands_run` sees `/tick` (handled in `App._answer`, never sent to the user) and runs `tick()`, or `night()` in the night window. GitHub cron remains as a backup.
 - `commands`: started by a relayed Telegram message or the relay's `/tick` (see below). If it lands in the night window it does `night()` instead. GitHub keeps only one pending run per concurrency group, so a commands run can replace a queued night run, and this keeps the night watch from being lost.
@@ -92,11 +92,15 @@ Without `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, messages are printed to stdout 
 **Dashboard** (`dashboard.py`, `docs/index.html`): after every run, `__main__` calls `dashboard.write`, which writes `.state/dashboard.json` as `{generated_at, days:{columns,rows}, checks:{columns,rows}}`.
 - **days:** one row per flight-date. Flight labels look like `F9 1882 · IAH → ORD · 11:36 AM → 2:25 PM`. Times are local wall time `YYYY-MM-DD HH:MM`, and "Release known" is false when the flight was already open at the first check.
 - **Outcome:** Open now / Open at departure / Sold out / Never opened (only when watched from before the release night) / No seats seen / Not open yet.
-- **checks:** every observation for the last 14 departure dates. "Seats left" is null when the flight is open but Frontier showed no count.
-- **days** also carries `Opened after`/`Sold out after` (the previous check's time), the GoWild and standard fares, and `Timeline` (every status change as `[local time, open|closed, seats]`). The day detail draws from these, so it works for any date, not just the 14 with checks.
+- **days** also carries `Opened after`/`Sold out after` (the previous check's time), the GoWild and standard fares, and `Timeline` (every status change as `[local time, open|closed, seats]`). Every view draws from these, so it works for any date. The per-check `checks` table was dropped (it was 95% of the file).
 - **dates:** one row per (departure date, route) that was checked (`Checks`, first/last check, `Nonstops` count), plus blackout dates across the months on screen (`Route` null). This lets the calendar tell "no nonstop that day" apart from "not tracked". On Tue/Wed/Sat in Nov 2026 Frontier listed no nonstops at all.
 - **routes:** the settings' routes in order. The calendar pairs each route with its reverse: the first is the top line in each day, the return is the bottom.
-- **Month view** (top of the page): a calendar for a route pair (both directions in each day), with prev/next and a month dropdown. Each day shows when seats appeared (`1:06a`, `≤` if already open at the first check) and days before departure (`3d`), colored by outcome. Tapping a day opens the day detail: each flight's release and sell-out times, total open hours across windows, seats, fares, an open/closed strip up to departure and every change. The URL hash holds the day (`#2026-11-17`), so links work. "Trends by flight" (the older per-flight charts) sits below it.
+- **Month view** (top of the page): a calendar for a route pair (both directions in each day), with prev/next and a month dropdown. Each day shows when seats appeared (`1:06a`, `≤` if already open at the first check) and days before departure (`3d`), colored by outcome. Tapping a day opens the day detail: each flight's release and sell-out times, total open hours across windows, seats, fares, an open/closed strip up to departure and every change. The URL hash holds the day (`#2026-11-17`), so links work. - **Trends** (below), all grouped by **direction**, not by flight label: Frontier changes the flight time by weekday, so per-label charts had 1–3 points each.
+  - At a glance: departures that got seats, median hours open, median first seen (only releases the tracker caught), earliest seen.
+  - Day by day: one row per departure, last 8 weeks, x = hours from the departure date's midnight; green bars are every open window, a dotted left end means already open at the first check. Toggle "group by weekday".
+  - Week over week: weekly (Mon–Sun) hours open per departure and share of departures with seats, one line per direction (`--dir-0` blue, `--dir-1` amber); the current week is hollow/dashed.
+  - Weekday × week: grids of hours open, shaded by length.
+  - Rows and cells open that day in the month view.
 - **The page:** `docs/index.html` is a standalone GitHub Pages page (d3 from cdnjs). It fetches the JSON from `raw.githubusercontent.com/adambabin/flight-watcher/state/dashboard.json`.
 - **Testing the page:** render it with Playwright, routing that URL and d3 to local files (cdnjs is blocked in the cloud sandbox; d3 is available from npm).
 
@@ -185,7 +189,7 @@ Next steps:
    - Thu Oct 29 ORD→IAH opened between 4:20 and 7:52 AM Mon, about 3 days out.
    - Wed Oct 28 IAH→ORD F9 3136 reopened on the evening of Oct 26.
    - Thu Oct 29 IAH→ORD F9 3136 (5:06 PM) opened between 7:53 and 11:05 AM Mon, about 3 days out.
-   - The dashboard's release chart (ticket #12) shows this directly, as days before departure.
+   - The dashboard's "At a glance" and "Day by day" views show this directly, as days before departure. With the 7-day lookahead, "first seen (median)" becomes reliable after a couple of weeks.
 3. Ask the user to try the dashboard on their phone and the new release chart; then close tickets #11 and #12.
 4. Once the Pages dashboard has real data, delete the sample Google Sheet, the Notion SAMPLE mockups and the claude.ai mockup artifact.
 

@@ -24,7 +24,7 @@ NIGHT_LATE_START = 20           # a run starting this many minutes after midnigh
 POLL_EVERY = 4                  # minutes between checks
 POLL_HOT = 2                    # minutes between checks around a likely release moment
 HOT_ZONES = ("America/New_York",)   # midnights besides the local one where seats have shown up
-LOOKAHEAD_DAYS = 3              # ticks check today through this many days ahead
+LOOKAHEAD_DAYS = 7              # ticks check today through this many days ahead (seats often open ~3 days out)
 NIGHT_MAX_BLOCKS = 3
 DIGEST_LATE_LIMIT = timedelta(hours=6)
 SAMPLE_EVERY = timedelta(days=7)    # how often to keep a good Frontier page, for parser tests
