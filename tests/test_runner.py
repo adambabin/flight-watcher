@@ -127,9 +127,9 @@ def test_blackout_night_skips_watch(state):
     clock = Clock(local(2026, 11, 23, 23, 50))  # Tue Nov 24 opens Wed Nov 25: both blackout
     app, fr, bot = make_app(state, clock, released_at_midnight)
     app.night()
-    # Falls back to one ordinary tick: blackout dates (Nov 24, 25) are never checked.
-    assert {c[2].isoformat() for c in fr.calls} == {"2026-11-23", "2026-11-26"}
-    assert len(fr.calls) == 4
+    # Falls back to one ordinary tick: blackout dates (Nov 24-25, 28-30) are never checked.
+    assert {c[2].isoformat() for c in fr.calls} == {"2026-11-23", "2026-11-26", "2026-11-27"}
+    assert len(fr.calls) == 6
 
 
 def test_night_watch_tightens_around_both_midnights(state):
@@ -147,11 +147,11 @@ def test_night_watch_tightens_around_both_midnights(state):
     assert min(g for m, g in gaps.items() if 40 <= m <= 70) == 4   # quieter in between
 
 
-def test_tick_checks_three_days_out(state):
+def test_tick_checks_a_week_out(state):
     clock = Clock(local(2026, 10, 26, 9, 5))
     app, fr, bot = make_app(state, clock, released_at_midnight)
     app.tick()
-    assert sorted({c[2].isoformat() for c in fr.calls}) == ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29"]
+    assert sorted({c[2].isoformat() for c in fr.calls}) == [f"2026-10-{d}" for d in range(26, 32)] + ["2026-11-01", "2026-11-02"]
 
 
 def _redesigned(origin, dest, dep, now):
@@ -163,7 +163,7 @@ def test_layout_change_alerts_once_a_day_saves_the_page_and_recovers(state):
     app, fr, bot = make_app(state, clock, _redesigned)
     app.tick()
     h = state.runtime["health"]
-    assert h["fail_streak"] == 8 and "layout changed" in h["last_error"]
+    assert h["fail_streak"] == 16 and "layout changed" in h["last_error"]
     alerts = [m for m in bot.sent if "Frontier checks are failing" in m]
     assert len(alerts) == 1 and app.health_alerted
     assert state.flights == {}
@@ -205,13 +205,13 @@ def test_two_failures_then_success_stays_quiet(state):
 def test_empty_day_counts_as_a_failure_when_that_weekday_flew_last_week(state):
     clock = Clock(local(2026, 10, 19, 9, 5))
     app, _, _ = make_app(state, clock, released_at_midnight)
-    app.tick()   # records Oct 19-22
+    app.tick()   # records Oct 19-26
     clock.t += timedelta(days=7)
     app2, _, bot = make_app(state, clock, lambda *a: page([]))
     app2.tick()
-    # Each route: today (Oct 26) doesn't count, since departed flights drop off; Oct 27-29
-    # flew a week earlier, so those 3 do.
-    assert state.runtime["health"]["fail_streak"] == 3
+    # Today (Oct 26) doesn't count, since departed flights drop off; Oct 27-Nov 2 flew a
+    # week earlier, so those 7 do.
+    assert state.runtime["health"]["fail_streak"] == 7
     assert app2.health_alerted and any("no flights listed" in m for m in bot.sent)
 
 

@@ -22,10 +22,7 @@ def test_dashboard_export_after_a_night(state):
     assert ord_iah["Release (min after midnight)"] == 1
     assert ord_iah["Outcome"] == "Open now" and ord_iah["Max seats seen"] == 2
     assert d["F9 1235 · IAH → ORD · 6:05 AM → 8:42 AM"]["Outcome"] == "Not open yet"
-    checks = [dict(zip(out["checks"]["columns"], r)) for r in out["checks"]["rows"]]
-    mine = [c for c in checks if c["Flight"].startswith("F9 1234")]
-    assert mine[0]["Checked at"] == "2026-10-26 23:50" and mine[0]["GoWild open"] is False
-    assert any(c["GoWild open"] and c["Seats left"] == 2 and 0 <= c["Hours after midnight"] < 0.1 for c in mine)
+    assert "checks" not in out   # the page draws from each flight's timeline instead
 
 
 def test_dashboard_reports_failing_checks(state):

@@ -2,7 +2,7 @@
 
 Tracks Frontier **GoWild pass** seats on nonstop flights on the routes you choose (configured through bot commands) and talks to you on Telegram:
 
-- **Night watch**: checks every few minutes from 10:40 PM to 12:30 AM Central, plus hourly checks up to 3 days ahead, to record when GoWild seats are actually released.
+- **Night watch**: checks every few minutes from 10:40 PM to 12:30 AM Central, plus hourly checks up to 7 days ahead, to record when GoWild seats are actually released.
 - **Release alerts**: `/alert` before bed and you get a ping the moment seats open (or a note that none did).
 - **6 AM report**: flights released overnight (flight number, times, seats left, when they opened) plus how today's flights are doing.
 - **History**: when each flight's GoWild seats opened, sold out, or reopened, kept as JSON on the `state` branch.
@@ -92,7 +92,7 @@ The repo is **public**, so GitHub Actions minutes are free and unlimited. Your s
 | When (Central) | What |
 |---|---|
 | 10:40 PM – 12:30 AM | **Night watch:** checks the date about to open every 4 minutes, and every 2 minutes from 10:57–11:12 PM (midnight Eastern) and 11:57 PM–12:12 AM (midnight Central). GoWild seats have shown up before midnight Central. |
-| Every hour at :05 | Checks flights from today through 3 days out. Seats have opened well before the night before, so this finds when they really appear. It also answers commands and sends the 6 AM report. |
+| Every hour at :05 | Checks flights from today through 7 days out. Seats often open about 3 days before departure, so this finds when they really appear. It also answers commands and sends the 6 AM report. |
 
 **Sell-out times** are known to within about an hour ("sold out by 10:05 AM").
 

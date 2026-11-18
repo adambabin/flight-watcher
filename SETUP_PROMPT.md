@@ -21,7 +21,7 @@ Everything below is the reference you need. Read it all before starting.
 ## Part A. What this is and how it works
 
 ### What it does
-- Every hour, it checks Frontier's website for **GoWild seats** on the nonstop routes I choose, from today through 3 days ahead.
+- Every hour, it checks Frontier's website for **GoWild seats** on the nonstop routes I choose, from today through 7 days ahead.
 - Each night from **10:40 PM to 12:30 AM** in my time zone, it checks every 2–4 minutes for the date about to open (the "night watch").
 - It records **when seats appear and when they sell out**, and messages me on **Telegram**:
   - alerts when seats open (`/alert`, or every night with `/nightly on`)
@@ -32,7 +32,7 @@ Everything below is the reference you need. Read it all before starting.
 
 ### How GoWild seats work (what the tracker is built around)
 - Officially, domestic GoWild seats open **the day before departure, around midnight** in the departure airport's time zone. Wednesday's flights open around midnight going into Tuesday, which is late Monday night.
-- **In practice, they often open earlier.** The original owner's data shows seats opening before midnight, and sometimes **about 3 days before departure**, e.g. late morning three days out. That's why it checks hourly up to 3 days ahead. The dashboard's release chart shows how many days or hours before departure seats appeared.
+- **In practice, they often open earlier.** The original owner's data shows seats opening before midnight, and sometimes **about 3 days before departure**, e.g. late morning three days out. That's why it checks hourly up to 7 days ahead. The dashboard's day-by-day timeline shows how many days or hours before departure seats appeared.
 - Each flight gets only a few GoWild seats, and they can **reappear later** when someone cancels. An alert fires again if seats sell out and come back.
 - **Blackout dates** (holidays) have no GoWild seats at all. The tracker knows the ones Frontier has posted (through April 2027) and won't arm alerts for them.
 - The tracker reads Frontier's normal public search page. It never logs in, so it never needs my Frontier password. It's unofficial, not affiliated with Frontier, and could break if Frontier redesigns its site.

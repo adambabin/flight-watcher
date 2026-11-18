@@ -4,7 +4,6 @@ Written into the state directory after every run, so it rides along to the publi
 `state` branch and the page fetches it from raw.githubusercontent.com. Tables are
 {columns, rows} to keep the file small. All times are local to the route's origin.
 """
-import glob
 import json
 import os
 from datetime import date, datetime, timedelta
@@ -14,13 +13,10 @@ from .rules import is_blackout
 from .state import HEALTH_ALERT_AFTER, route_key
 from .timeutil import clock, dep_clock, parse_iso
 
-CHECK_DAYS = 14   # departures whose every check is included (the seat-count chart)
-
 DAY_COLUMNS = ["Flight", "Route", "Date", "Weekday", "Departs at", "Released at", "Release known",
                "Release (min after midnight)", "Sold out at", "Hours open", "Max seats seen",
                "Reopened", "Outcome", "Opened after", "Sold out after", "GoWild fare", "Standard fare",
                "Timeline"]
-CHECK_COLUMNS = ["Flight", "Date", "Checked at", "Hours after midnight", "Seats left", "GoWild open"]
 # One row per (departure date, route) that was checked, so the calendar can tell "no nonstop
 # flights that day" apart from "not tracked". Blackout dates are listed even when unchecked.
 DATE_COLUMNS = ["Date", "Route", "Checks", "First check", "Last check", "Nonstops", "Blackout"]
@@ -88,36 +84,6 @@ def _day_row(key, r, fallback_tz, now):
     ]
 
 
-def _check_rows(state_dir, flights, fallback_tz, keep_dates):
-    labels = {}
-    for key, r in flights.items():
-        labels[key] = label(key.split("|")[2], key.split("|")[1], r.get("dep"), r.get("arr"))
-    rows = []
-    for path in sorted(glob.glob(os.path.join(state_dir, "observations", "*.jsonl")))[-2:]:
-        with open(path, encoding="utf-8") as f:
-            for line in f:
-                try:
-                    obs = json.loads(line)
-                except ValueError:
-                    continue
-                if obs["date"] not in keep_dates:
-                    continue
-                tz = airport_tz(obs["route"].split("-")[0], fallback_tz)
-                checked = _local(obs["ts"], tz)
-                midnight = _release_midnight(date.fromisoformat(obs["date"]), tz)
-                for fl in obs.get("nonstop", []):
-                    key = f"{obs['date']}|{obs['route']}|{fl['flight']}"
-                    rows.append([
-                        labels.get(key) or label(fl["flight"], obs["route"], fl.get("dep"), fl.get("arr")),
-                        obs["date"],
-                        _stamp(checked),
-                        round((checked - midnight).total_seconds() / 3600, 2),
-                        fl.get("seats") if fl.get("gowild") else 0,
-                        bool(fl.get("gowild")),
-                    ])
-    return rows
-
-
 def _date_rows(state, fallback_tz):
     nonstops = {}
     for key in state.flights:
@@ -152,14 +118,12 @@ def _health(state, tz):
 def build(state, now):
     fallback = state.settings["timezone"]
     days = [_day_row(k, r, fallback, now) for k, r in sorted(state.flights.items())]
-    keep = sorted({k.split("|")[0] for k in state.flights})[-CHECK_DAYS:]
     return {
         "generated_at": now.astimezone(airport_tz("", fallback)).isoformat(timespec="seconds"),
         "days": {"columns": DAY_COLUMNS, "rows": days},
         "dates": {"columns": DATE_COLUMNS, "rows": _date_rows(state, fallback)},
         # Routes in the owner's settings order, so the calendar lists them the way they were added.
         "routes": [route_key(r) for r in state.settings.get("routes", [])],
-        "checks": {"columns": CHECK_COLUMNS, "rows": _check_rows(state.path, state.flights, fallback, set(keep))},
         "health": _health(state, airport_tz("", fallback)),
     }
 

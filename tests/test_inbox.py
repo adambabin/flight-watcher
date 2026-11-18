@@ -44,7 +44,7 @@ def test_relay_tick_runs_a_normal_check(state):
     app.inbox = FakeInbox(["/tick"])
     app.commands_run()
     assert app.inbox.deleted == [1]
-    assert len({c[2] for c in fr.calls}) == 4          # today through 3 days out
+    assert len({c[2] for c in fr.calls}) == 8          # today through 7 days out
     assert any("morning report" in m for m in bot.sent)  # the 6 AM report goes out
     assert not any(m.startswith("Unknown command") for m in bot.sent)
 
