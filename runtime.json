@@ -50,11 +50,11 @@
   "first_fail": null,
   "last_block": null,
   "last_error": null,
-  "last_ok": "2026-11-21T04:07:09Z",
+  "last_ok": "2026-11-21T06:32:51Z",
   "notified": null,
   "sample_saved": "2026-11-17T02:06:28Z"
  },
- "last_check": "2026-11-21T04:07:09Z",
+ "last_check": "2026-11-21T06:32:51Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
