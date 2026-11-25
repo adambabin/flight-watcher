@@ -2,7 +2,6 @@
  "alerts": [],
  "block_notified": "2026-11-24",
  "blocks": [
-  "2026-10-29T00:06:07Z",
   "2026-11-01T05:03:56Z",
   "2026-11-02T05:20:13Z",
   "2026-11-02T07:06:24Z",
@@ -51,20 +50,21 @@
   "2026-11-24T09:06:10Z",
   "2026-11-24T11:06:03Z",
   "2026-11-24T17:06:09Z",
-  "2026-11-25T01:06:04Z"
+  "2026-11-25T01:06:04Z",
+  "2026-11-25T02:06:25Z"
  ],
  "digest_sent": "2026-11-24",
  "health": {
   "blocked": true,
   "fail_streak": 1,
-  "first_fail": "2026-11-25T01:06:04Z",
-  "last_block": "2026-11-25T01:06:04Z",
-  "last_error": "ORD-IAH 2026-11-26: HTTP 406 from Frontier",
-  "last_ok": "2026-11-25T00:06:31Z",
+  "first_fail": "2026-11-25T02:06:25Z",
+  "last_block": "2026-11-25T02:06:25Z",
+  "last_error": "IAH-ORD 2026-11-27: HTTP 406 from Frontier",
+  "last_ok": "2026-11-25T02:06:20Z",
   "notified": null,
   "sample_saved": "2026-11-24T02:06:29Z"
  },
- "last_check": "2026-11-25T00:06:31Z",
+ "last_check": "2026-11-25T02:06:20Z",
  "next_alert_id": 2,
  "telegram_offset": 643982119
 }
