@@ -1675,7 +1675,7 @@
   "dep": "2026-11-27T09:17:00",
   "first_seen": "2026-11-20T07:07:02Z",
   "flight": "F9 1882",
-  "last_check": "2026-11-27T05:06:31Z",
+  "last_check": "2026-11-27T06:06:29Z",
   "opened_at": null,
   "opened_prev": null,
   "price": null,
@@ -1700,7 +1700,7 @@
   "dep": "2026-11-27T05:25:00",
   "first_seen": "2026-11-20T07:06:21Z",
   "flight": "F9 3135",
-  "last_check": "2026-11-27T05:05:59Z",
+  "last_check": "2026-11-27T06:05:55Z",
   "opened_at": "2026-11-20T07:06:21Z",
   "opened_prev": null,
   "price": 98.98,
@@ -1740,10 +1740,10 @@
   "dep": "2026-12-03T20:09:00",
   "first_seen": "2026-11-26T07:06:52Z",
   "flight": "F9 1882",
-  "last_check": "2026-11-27T05:06:52Z",
+  "last_check": "2026-11-27T06:06:53Z",
   "opened_at": "2026-11-26T07:06:52Z",
   "opened_prev": null,
-  "price": 68.99,
+  "price": 98.98,
   "reopens": 0,
   "route": "IAH-ORD",
   "seats": 1,
@@ -1765,8 +1765,58 @@
   "dep": "2026-12-03T15:55:00",
   "first_seen": "2026-11-26T07:06:21Z",
   "flight": "F9 3135",
-  "last_check": "2026-11-27T05:06:17Z",
+  "last_check": "2026-11-27T06:06:15Z",
   "opened_at": "2026-11-26T07:06:21Z",
+  "opened_prev": null,
+  "price": 98.98,
+  "reopens": 0,
+  "route": "ORD-IAH",
+  "seats": null,
+  "sold_out_at": null,
+  "sold_out_prev": null,
+  "standard": 159.98,
+  "status": "open",
+  "timeline": [
+   [
+    "2026-11-26T07:06:21Z",
+    "open",
+    null
+   ]
+  ]
+ },
+ "2026-12-04|IAH-ORD|F9 1882": {
+  "arr": "2026-12-04T23:00:00",
+  "date": "2026-12-04",
+  "dep": "2026-12-04T20:09:00",
+  "first_seen": "2026-11-27T06:07:00Z",
+  "flight": "F9 1882",
+  "last_check": "2026-11-27T06:07:00Z",
+  "opened_at": "2026-11-27T06:07:00Z",
+  "opened_prev": null,
+  "price": 68.99,
+  "reopens": 0,
+  "route": "IAH-ORD",
+  "seats": null,
+  "sold_out_at": null,
+  "sold_out_prev": null,
+  "standard": 159.98,
+  "status": "open",
+  "timeline": [
+   [
+    "2026-11-27T06:07:00Z",
+    "open",
+    null
+   ]
+  ]
+ },
+ "2026-12-04|ORD-IAH|F9 3135": {
+  "arr": "2026-12-04T19:04:00",
+  "date": "2026-12-04",
+  "dep": "2026-12-04T15:55:00",
+  "first_seen": "2026-11-27T06:06:22Z",
+  "flight": "F9 3135",
+  "last_check": "2026-11-27T06:06:22Z",
+  "opened_at": "2026-11-27T06:06:22Z",
   "opened_prev": null,
   "price": 68.99,
   "reopens": 0,
@@ -1778,7 +1828,7 @@
   "status": "open",
   "timeline": [
    [
-    "2026-11-26T07:06:21Z",
+    "2026-11-27T06:06:22Z",
     "open",
     null
    ]
