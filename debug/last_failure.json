@@ -1,10 +1,10 @@
 {
- "at": "2026-11-28T04:06:02Z",
+ "at": "2026-11-28T04:41:01Z",
  "route": "ORD-IAH",
- "date": "2026-11-27",
+ "date": "2026-12-01",
  "error": "HTTP 406 from Frontier",
  "status": 406,
  "layout": false,
- "url": "https://booking.flyfrontier.com/Flight/InternalSelect?o1=ORD&d1=IAH&dd1=Nov+27%2C+2026&ADT=1&mon=true&promo=",
+ "url": "https://booking.flyfrontier.com/Flight/InternalSelect?o1=ORD&d1=IAH&dd1=Dec+01%2C+2026&ADT=1&mon=true&promo=",
  "page_saved": false
 }

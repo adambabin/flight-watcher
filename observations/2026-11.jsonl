@@ -7517,3 +7517,4 @@
 {"date": "2026-12-02", "itineraries": 13, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-28T03:51:16Z"}
 {"date": "2026-12-03", "itineraries": 15, "mode": "tick", "nonstop": [{"arr": "2026-12-03T23:00:00", "dep": "2026-12-03T20:09:00", "flight": "F9 1882", "gowild": true, "price": 98.98, "seats": 1, "standard": 149.98}], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-28T03:51:21Z"}
 {"date": "2026-12-04", "itineraries": 11, "mode": "tick", "nonstop": [{"arr": "2026-12-04T23:00:00", "dep": "2026-12-04T20:09:00", "flight": "F9 1882", "gowild": true, "price": 68.99, "seats": null, "standard": 159.98}], "out_of_range": false, "route": "IAH-ORD", "ts": "2026-11-28T03:51:27Z"}
+{"date": "2026-11-27", "itineraries": 0, "mode": "tick", "nonstop": [], "out_of_range": false, "route": "ORD-IAH", "ts": "2026-11-28T04:40:56Z"}
